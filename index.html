@@ -33,7 +33,7 @@
   section{margin-bottom:64px;scroll-margin-top:24px}
 
   /* Hero */
-  .hero{background:linear-gradient(135deg,#161b22,#1c2430);border:1px solid var(--border);border-radius:16px;padding:48px 44px;margin-bottom:56px;box-shadow:var(--shadow)}
+  .hero{background:linear-gradient(135deg,#161b22,#1c2430);border:1px solid var(--border);border-radius:16px;padding:48px 44px;margin-bottom:40px;box-shadow:var(--shadow)}
   .hero .tag{display:inline-block;background:rgba(245,166,35,.12);color:var(--accent);font-size:12px;letter-spacing:1.5px;text-transform:uppercase;padding:6px 14px;border-radius:20px;margin-bottom:20px;border:1px solid rgba(245,166,35,.25)}
   .hero h1{font-family:var(--serif);font-size:40px;line-height:1.15;margin-bottom:16px}
   .hero p{color:var(--muted);font-size:18px;max-width:640px}
@@ -73,6 +73,27 @@
   th{background:var(--bg-soft);color:var(--accent);font-size:12px;letter-spacing:.5px;text-transform:uppercase}
   tr:nth-child(even) td{background:rgba(255,255,255,.015)}
 
+  /* TOP 10 executive */
+  .exec{background:linear-gradient(135deg,#12161d,#1a2230);border:1px solid var(--border);border-radius:16px;padding:40px 40px 30px;margin-bottom:56px;box-shadow:var(--shadow)}
+  .exec .kicker{font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--accent);margin-bottom:8px}
+  .exec h2{font-family:var(--serif);font-size:30px;border:none;padding:0;margin-bottom:6px}
+  .exec .sub{color:var(--muted);font-size:16px;margin-bottom:26px}
+  .top10{display:flex;flex-direction:column;gap:12px;counter-reset:t}
+  .t10{display:grid;grid-template-columns:52px 1fr;gap:0;background:var(--bg-card);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:border-color .15s}
+  .t10:hover{border-color:var(--accent2)}
+  .t10 .rank{background:linear-gradient(160deg,var(--accent),#e0891a);color:#111;font-weight:800;font-size:20px;display:flex;align-items:center;justify-content:center}
+  .t10 .content{padding:14px 18px}
+  .t10 .title{font-weight:700;font-size:16px;color:#fff;margin-bottom:8px}
+  .t10 .ba{display:flex;gap:10px;flex-wrap:wrap;align-items:stretch;margin-bottom:8px}
+  .t10 .before,.t10 .after{flex:1;min-width:200px;font-size:13.5px;padding:8px 12px;border-radius:8px;line-height:1.5}
+  .t10 .before{background:rgba(248,81,73,.07);border:1px solid rgba(248,81,73,.25)}
+  .t10 .after{background:rgba(63,185,80,.07);border:1px solid rgba(63,185,80,.25)}
+  .t10 .before .lb{color:var(--red)} .t10 .after .lb{color:var(--green)}
+  .t10 .lb{font-size:10.5px;letter-spacing:1px;text-transform:uppercase;font-weight:700;display:block;margin-bottom:3px}
+  .t10 .gain{font-size:13px;color:var(--accent2)}
+  .t10 .gain b{color:var(--accent)}
+  @media(max-width:700px){.exec{padding:28px 20px}.t10 .ba{flex-direction:column}}
+
   /* Diagrams */
   .diagram{background:var(--code-bg);border:1px solid var(--border);border-radius:12px;padding:26px;margin:22px 0;overflow-x:auto}
   .flow{display:flex;align-items:center;gap:0;flex-wrap:wrap;justify-content:center}
@@ -108,7 +129,6 @@
   .step .body strong{display:block;margin-bottom:2px}
 
   footer{border-top:1px solid var(--border);padding:32px 56px;color:var(--muted);font-size:13px;max-width:940px;margin:0 auto}
-  .toc-progress{font-size:11px;color:var(--muted);margin-top:6px}
 
   @media(max-width:820px){
     nav.side{display:none}
@@ -123,8 +143,11 @@
     <div class="brand">AI-DLC <span>&amp;</span> SDLC<br>na AWS</div>
     <div class="sub">Kiro · Bedrock · Multi-Cloud</div>
 
-    <div class="mod">Fundamentos</div>
+    <div class="mod">Resumo executivo</div>
+    <a href="#top10">Top 10 diferenças</a>
     <a href="#intro">Visão geral do curso</a>
+
+    <div class="mod">Fundamentos</div>
     <a href="#sdlc">M1 · SDLC clássico</a>
     <a href="#aidlc">M2 · O que é AI-DLC</a>
 
@@ -146,7 +169,7 @@
 
   <main>
     <!-- HERO -->
-    <div class="hero" id="intro">
+    <div class="hero">
       <span class="tag">Curso técnico · nível intermediário</span>
       <h1>AI-DLC &amp; SDLC na AWS com Kiro, Amazon Bedrock e Multi-Cloud</h1>
       <p>Um curso prático sobre como a Inteligência Artificial transforma o ciclo de vida de desenvolvimento de software — do conceito à entrega em três nuvens (AWS, Azure e Google Cloud), com integrações reais de Jira e Git.</p>
@@ -160,7 +183,111 @@
       </div>
     </div>
 
-    <div class="card">
+    <!-- TOP 10 EXECUTIVO -->
+    <div class="exec" id="top10">
+      <div class="kicker">Resumo executivo · leitura de 3 minutos</div>
+      <h2>Top 10 diferenças: SDLC → AI-DLC</h2>
+      <p class="sub">O que muda, na prática, quando a IA passa a colaborar em cada fase. Cada linha mostra o <strong>antes</strong>, o <strong>depois</strong> e o ganho de negócio.</p>
+
+      <div class="top10">
+        <div class="t10"><div class="rank">1</div><div class="content">
+          <div class="title">O teste nasce junto com o requisito</div>
+          <div class="ba">
+            <div class="before"><span class="lb">Antes</span>Teste escrito depois do código — se sobrar tempo. Cobertura baixa.</div>
+            <div class="after"><span class="lb">Depois</span>Critérios de aceite viram testes no mesmo passo da geração do código.</div>
+          </div>
+          <div class="gain">Ganho: <b>validação mais rápida e cobertura maior</b> sem esforço manual.</div>
+        </div></div>
+
+        <div class="t10"><div class="rank">2</div><div class="content">
+          <div class="title">A intenção vira especificação estruturada</div>
+          <div class="ba">
+            <div class="before"><span class="lb">Antes</span>Documento de requisitos escrito à mão, ambíguo, revisões longas.</div>
+            <div class="after"><span class="lb">Depois</span>IA transforma a intenção em spec (requisitos + design) que o humano só revisa.</div>
+          </div>
+          <div class="gain">Ganho: <b>ambiguidade pega no início</b>, quando corrigir é barato.</div>
+        </div></div>
+
+        <div class="t10"><div class="rank">3</div><div class="content">
+          <div class="title">O papel do humano muda de executor para revisor</div>
+          <div class="ba">
+            <div class="before"><span class="lb">Antes</span>Time gasta tempo escrevendo boilerplate e código repetitivo.</div>
+            <div class="after"><span class="lb">Depois</span>Agente produz o rascunho; o humano decide, aprova e ajusta.</div>
+          </div>
+          <div class="gain">Ganho: <b>seniores focam em arquitetura e decisão</b>, não em digitação.</div>
+        </div></div>
+
+        <div class="t10"><div class="rank">4</div><div class="content">
+          <div class="title">Validação empurrada para o começo (shift-left)</div>
+          <div class="ba">
+            <div class="before"><span class="lb">Antes</span>Erro descoberto em teste ou produção, no fim do ciclo.</div>
+            <div class="after"><span class="lb">Depois</span>Spec, testes, CI e agente revisor peneiram o erro em camadas, cedo.</div>
+          </div>
+          <div class="gain">Ganho: <b>bug caro em produção vira ajuste barato na spec</b>.</div>
+        </div></div>
+
+        <div class="t10"><div class="rank">5</div><div class="content">
+          <div class="title">Rastreabilidade automática de ponta a ponta</div>
+          <div class="ba">
+            <div class="before"><span class="lb">Antes</span>"De qual requisito veio esse código?" ninguém sabe responder.</div>
+            <div class="after"><span class="lb">Depois</span>Cada código/PR/deploy aponta para a spec e o requisito de origem.</div>
+          </div>
+          <div class="gain">Ganho: <b>auditoria e governança sem burocracia extra</b>.</div>
+        </div></div>
+
+        <div class="t10"><div class="rank">6</div><div class="content">
+          <div class="title">Design vira opções com trade-offs, não um chute</div>
+          <div class="ba">
+            <div class="before"><span class="lb">Antes</span>Arquiteto desenha do zero; decisões não documentadas.</div>
+            <div class="after"><span class="lb">Depois</span>IA propõe alternativas de arquitetura com prós e contras; humano escolhe.</div>
+          </div>
+          <div class="gain">Ganho: <b>decisão informada e registrada</b>, menos dívida técnica.</div>
+        </div></div>
+
+        <div class="t10"><div class="rank">7</div><div class="content">
+          <div class="title">Infra e pipeline gerados como código (IaC)</div>
+          <div class="ba">
+            <div class="before"><span class="lb">Antes</span>Pipeline e ambientes configurados à mão, divergentes entre si.</div>
+            <div class="after"><span class="lb">Depois</span>IA gera IaC e pipeline; deploy multi-cloud parametrizado e repetível.</div>
+          </div>
+          <div class="gain">Ganho: <b>release previsível</b> e portabilidade entre nuvens.</div>
+        </div></div>
+
+        <div class="t10"><div class="rank">8</div><div class="content">
+          <div class="title">Segurança embutida, não etapa final</div>
+          <div class="ba">
+            <div class="before"><span class="lb">Antes</span>Revisão de segurança no fim, quando mudar já é caro.</div>
+            <div class="after"><span class="lb">Depois</span>Guardrails, scan de segredos, SAST e padrões seguros por default no fluxo.</div>
+          </div>
+          <div class="gain">Ganho: <b>vulnerabilidade pega antes do merge</b>.</div>
+        </div></div>
+
+        <div class="t10"><div class="rank">9</div><div class="content">
+          <div class="title">Operação com diagnóstico assistido</div>
+          <div class="ba">
+            <div class="before"><span class="lb">Antes</span>Alerta dispara, engenheiro investiga do zero, madrugada afora.</div>
+            <div class="after"><span class="lb">Depois</span>Agente triagem o incidente, sugere causa raiz e correção; humano valida.</div>
+          </div>
+          <div class="gain">Ganho: <b>tempo de resolução menor</b> e menos desgaste do time.</div>
+        </div></div>
+
+        <div class="t10"><div class="rank">10</div><div class="content">
+          <div class="title">Consumo de IA centralizado e governável</div>
+          <div class="ba">
+            <div class="before"><span class="lb">Antes</span>Ferramentas de IA soltas, gasto por pessoa, sem visão de custo nem auditoria.</div>
+            <div class="after"><span class="lb">Depois</span>Modelos via Bedrock na conta: custo por token consolidado, guardrails, logs.</div>
+          </div>
+          <div class="gain">Ganho: <b>controle de custo, dados internos e conformidade</b>.</div>
+        </div></div>
+      </div>
+
+      <div class="callout warn" style="margin-top:22px">
+        <div class="lbl">A ressalva executiva</div>
+        <p>Todos esses ganhos dependem de uma coisa: <strong>o portão humano precisa existir de verdade</strong>. Velocidade sem revisão troca dívida técnica por dívida de IA. O AI-DLC acelera porque o humano passa a <em>julgar</em> em vez de <em>produzir</em> — não porque o humano sai do processo.</p>
+      </div>
+    </div>
+
+    <div class="card" id="intro">
       <h4>Para quem é este curso</h4>
       <p>Times de produto e engenharia que querem entender e adotar o <strong>AI-Driven Development Lifecycle (AI-DLC)</strong>: a evolução do SDLC em que agentes de IA participam de cada fase, das especificações ao deploy. Você não precisa saber programar para acompanhar os conceitos, fluxos e decisões de arquitetura — os trechos de código são ilustrativos.</p>
       <h4>O que você vai conseguir fazer ao final</h4>
@@ -303,6 +430,17 @@
         <tr><td>Model Evaluation</td><td>Comparar qualidade/custo de modelos</td><td>Escolher o modelo certo por tarefa</td></tr>
       </table>
 
+      <h3>Kiro embutido vs Kiro conectado ao Bedrock (custo)</h3>
+      <p>Uma decisão central do AI-DLC de plataforma: de onde vem o modelo que os agentes consomem.</p>
+      <table>
+        <tr><th>Critério</th><th>Modelo embutido no Kiro</th><th>Kiro/agente → Bedrock na sua conta</th></tr>
+        <tr><td>Cobrança</td><td>Por usuário (licença)</td><td>Centralizada, por token (fatura AWS)</td></tr>
+        <tr><td>Controle de modelo, guardrails e dados internos</td><td>Limitado</td><td>Total</td></tr>
+        <tr><td>Gestão de custo</td><td>A AWS cuida</td><td>Você cuida (budgets, FinOps)</td></tr>
+        <tr><td>Complexidade</td><td>Baixa</td><td>Maior</td></tr>
+      </table>
+      <p>Padrão comum: Kiro embutido para a produtividade dos devs, e Bedrock na conta para os <strong>agentes de produção</strong> (os que rodam no pipeline, tocam dados internos e precisam de auditoria).</p>
+
       <h3>Escolha de modelo por tarefa (padrão de custo)</h3>
       <p>Nem toda tarefa precisa do modelo mais caro. Um padrão comum no AI-DLC é rotear:</p>
       <ul>
@@ -355,6 +493,16 @@ print(resp["output"]["message"]["content"][0]["text"])</code></pre>
           <div class="cell">🧠 Modelos + Knowledge Base + Guardrails</div>
         </div></div>
       </div>
+
+      <h3>Por que este fluxo acelera validação e testes</h3>
+      <p>O ganho de velocidade não vem de "escrever mais rápido", vem de <strong>testar mais cedo e com menos esforço humano</strong>:</p>
+      <ul>
+        <li><strong>Teste nasce com o requisito:</strong> os critérios de aceite da spec já viram testes no mesmo passo do código.</li>
+        <li><strong>Cobertura sem digitação:</strong> o agente gera casos felizes, de erro e de borda de uma vez; o humano revisa em vez de criar.</li>
+        <li><strong>Shift-left:</strong> spec, testes, CI e agente revisor peneiram o erro na fase em que consertar é barato.</li>
+        <li><strong>Rastreabilidade responde "cobri tudo?":</strong> cada teste aponta para o requisito de origem.</li>
+        <li><strong>Diagnóstico assistido:</strong> ao quebrar um teste, o agente já sugere causa e correção; o humano valida.</li>
+      </ul>
 
       <h3>Passo a passo</h3>
       <div class="step"><div class="num">1</div><div class="body"><strong>Intenção → Spec</strong>O time descreve o que quer ("adicionar carrinho com cupom"). O Kiro, via Bedrock, gera <code>requirements.md</code> com user stories e critérios de aceite. Humano revisa e aprova. <span class="badge kiro">PORTÃO 1</span></div></div>
