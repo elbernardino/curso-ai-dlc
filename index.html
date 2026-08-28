@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI-DLC & SDLC na AWS — Kiro, Bedrock e Multi-Cloud</title>
+<style>
+  :root{
+    --bg:#0d1117; --bg-soft:#161b22; --bg-card:#1c2430; --border:#2a3441;
+    --text:#e6edf3; --muted:#9aa7b4; --accent:#f5a623; --accent2:#2ec4b6;
+    --aws:#ff9900; --azure:#0089d6; --gcp:#ea4335; --kiro:#a78bfa;
+    --green:#3fb950; --amber:#d29922; --red:#f85149;
+    --code-bg:#0b0f14; --shadow:0 8px 30px rgba(0,0,0,.4);
+    --serif:Georgia,'Times New Roman',serif; --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.7;font-size:16px}
+  a{color:var(--accent2);text-decoration:none}
+  a:hover{text-decoration:underline}
+
+  /* Layout */
+  .shell{display:flex;min-height:100vh}
+  nav.side{position:sticky;top:0;align-self:flex-start;width:290px;height:100vh;overflow-y:auto;background:var(--bg-soft);border-right:1px solid var(--border);padding:28px 20px}
+  nav.side .brand{font-family:var(--serif);font-size:20px;font-weight:700;margin-bottom:4px;line-height:1.3}
+  nav.side .brand span{color:var(--accent)}
+  nav.side .sub{color:var(--muted);font-size:12px;margin-bottom:22px;letter-spacing:.5px;text-transform:uppercase}
+  nav.side .mod{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--accent);margin:20px 0 8px}
+  nav.side a{display:block;color:var(--muted);font-size:14px;padding:6px 10px;border-radius:6px;border-left:2px solid transparent}
+  nav.side a:hover{background:var(--bg-card);color:var(--text);text-decoration:none;border-left-color:var(--accent2)}
+
+  main{flex:1;max-width:940px;margin:0 auto;padding:48px 56px 120px}
+  section{margin-bottom:64px;scroll-margin-top:24px}
+
+  /* Hero */
+  .hero{background:linear-gradient(135deg,#161b22,#1c2430);border:1px solid var(--border);border-radius:16px;padding:48px 44px;margin-bottom:56px;box-shadow:var(--shadow)}
+  .hero .tag{display:inline-block;background:rgba(245,166,35,.12);color:var(--accent);font-size:12px;letter-spacing:1.5px;text-transform:uppercase;padding:6px 14px;border-radius:20px;margin-bottom:20px;border:1px solid rgba(245,166,35,.25)}
+  .hero h1{font-family:var(--serif);font-size:40px;line-height:1.15;margin-bottom:16px}
+  .hero p{color:var(--muted);font-size:18px;max-width:640px}
+  .hero .chips{margin-top:24px;display:flex;gap:10px;flex-wrap:wrap}
+  .chip{font-size:13px;padding:6px 12px;border-radius:8px;background:var(--bg);border:1px solid var(--border);color:var(--text)}
+
+  h2{font-family:var(--serif);font-size:30px;margin-bottom:8px;padding-bottom:14px;border-bottom:1px solid var(--border)}
+  h2 .n{color:var(--accent);font-size:15px;font-family:var(--sans);letter-spacing:2px;display:block;margin-bottom:4px}
+  h3{font-size:21px;margin:32px 0 12px;color:var(--text)}
+  h4{font-size:16px;margin:22px 0 8px;color:var(--accent2);text-transform:uppercase;letter-spacing:.5px}
+  p{margin-bottom:16px;color:#d5dde5}
+  ul,ol{margin:0 0 16px 22px}
+  li{margin-bottom:8px;color:#d5dde5}
+  strong{color:#fff}
+
+  .lead{font-size:18px;color:var(--muted);margin-bottom:24px}
+
+  /* Cards & callouts */
+  .card{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:24px 26px;margin:20px 0}
+  .grid{display:grid;gap:16px}
+  .grid-2{grid-template-columns:1fr 1fr}
+  .grid-3{grid-template-columns:1fr 1fr 1fr}
+  @media(max-width:820px){.grid-2,.grid-3{grid-template-columns:1fr}}
+
+  .callout{border-left:4px solid var(--accent2);background:rgba(46,196,182,.07);padding:16px 20px;border-radius:0 10px 10px 0;margin:20px 0}
+  .callout.warn{border-color:var(--amber);background:rgba(210,153,34,.08)}
+  .callout.tip{border-color:var(--kiro);background:rgba(167,139,250,.08)}
+  .callout .lbl{font-size:12px;letter-spacing:1px;text-transform:uppercase;font-weight:700;margin-bottom:6px}
+  .callout.tip .lbl{color:var(--kiro)} .callout .lbl{color:var(--accent2)} .callout.warn .lbl{color:var(--amber)}
+
+  code{background:var(--code-bg);padding:2px 7px;border-radius:5px;font-family:'SF Mono',Menlo,Consolas,monospace;font-size:13.5px;color:#ffc98a;border:1px solid #1e2733}
+  pre{background:var(--code-bg);border:1px solid var(--border);border-radius:10px;padding:18px 20px;overflow-x:auto;margin:16px 0}
+  pre code{background:none;border:none;padding:0;color:#c9d5e0;font-size:13px;line-height:1.65}
+
+  table{width:100%;border-collapse:collapse;margin:18px 0;font-size:14px}
+  th,td{border:1px solid var(--border);padding:11px 14px;text-align:left;vertical-align:top}
+  th{background:var(--bg-soft);color:var(--accent);font-size:12px;letter-spacing:.5px;text-transform:uppercase}
+  tr:nth-child(even) td{background:rgba(255,255,255,.015)}
+
+  /* Diagrams */
+  .diagram{background:var(--code-bg);border:1px solid var(--border);border-radius:12px;padding:26px;margin:22px 0;overflow-x:auto}
+  .flow{display:flex;align-items:center;gap:0;flex-wrap:wrap;justify-content:center}
+  .node{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:14px 18px;text-align:center;min-width:120px;font-size:13px}
+  .node .t{font-weight:700;display:block;margin-bottom:3px}
+  .node .d{color:var(--muted);font-size:11px}
+  .node.k{border-color:var(--kiro);box-shadow:0 0 0 1px rgba(167,139,250,.3)}
+  .node.b{border-color:var(--accent);box-shadow:0 0 0 1px rgba(245,166,35,.3)}
+  .arrow{color:var(--muted);font-size:22px;padding:0 12px}
+  .arrow-down{text-align:center;color:var(--muted);font-size:22px;padding:6px 0}
+
+  .lane{display:grid;grid-template-columns:130px 1fr;gap:12px;margin:10px 0;align-items:center}
+  .lane .laneName{font-size:12px;font-weight:700;color:var(--accent);text-align:right;padding-right:8px}
+  .lane .laneCells{display:flex;gap:10px;flex-wrap:wrap}
+  .lane .cell{background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:9px 13px;font-size:12.5px}
+
+  .cloud-aws{color:var(--aws)} .cloud-azure{color:var(--azure)} .cloud-gcp{color:var(--gcp)}
+  .badge{display:inline-block;font-size:11px;padding:3px 9px;border-radius:6px;font-weight:700;letter-spacing:.5px}
+  .badge.aws{background:rgba(255,153,0,.15);color:var(--aws);border:1px solid rgba(255,153,0,.3)}
+  .badge.azure{background:rgba(0,137,214,.15);color:var(--azure);border:1px solid rgba(0,137,214,.3)}
+  .badge.gcp{background:rgba(234,67,53,.15);color:var(--gcp);border:1px solid rgba(234,67,53,.3)}
+  .badge.kiro{background:rgba(167,139,250,.15);color:var(--kiro);border:1px solid rgba(167,139,250,.3)}
+
+  .quiz{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:22px 24px;margin:18px 0}
+  .quiz .q{font-weight:700;margin-bottom:12px}
+  .quiz details{margin-top:8px;border-top:1px dashed var(--border);padding-top:10px}
+  .quiz summary{cursor:pointer;color:var(--accent2);font-size:14px}
+  .quiz summary:hover{color:var(--accent)}
+
+  .step{display:flex;gap:16px;margin:16px 0}
+  .step .num{flex:none;width:34px;height:34px;border-radius:50%;background:var(--accent);color:#111;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:15px}
+  .step .body{flex:1}
+  .step .body strong{display:block;margin-bottom:2px}
+
+  footer{border-top:1px solid var(--border);padding:32px 56px;color:var(--muted);font-size:13px;max-width:940px;margin:0 auto}
+  .toc-progress{font-size:11px;color:var(--muted);margin-top:6px}
+
+  @media(max-width:820px){
+    nav.side{display:none}
+    main{padding:28px 20px 80px}
+    .hero{padding:32px 24px}.hero h1{font-size:30px}
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+  <nav class="side">
+    <div class="brand">AI-DLC <span>&amp;</span> SDLC<br>na AWS</div>
+    <div class="sub">Kiro · Bedrock · Multi-Cloud</div>
+
+    <div class="mod">Fundamentos</div>
+    <a href="#intro">Visão geral do curso</a>
+    <a href="#sdlc">M1 · SDLC clássico</a>
+    <a href="#aidlc">M2 · O que é AI-DLC</a>
+
+    <div class="mod">Ferramentas</div>
+    <a href="#kiro">M3 · Kiro (spec-driven)</a>
+    <a href="#bedrock">M4 · Amazon Bedrock</a>
+
+    <div class="mod">Fluxos & Arquitetura</div>
+    <a href="#fluxo">M5 · Fluxo AI-DLC ponta a ponta</a>
+    <a href="#arquitetura">M6 · Arquitetura de referência</a>
+    <a href="#multicloud">M7 · Deploy multi-cloud</a>
+
+    <div class="mod">Integrações & Prática</div>
+    <a href="#integracoes">M8 · Jira, Git, CI/CD</a>
+    <a href="#governanca">M9 · Segurança & governança</a>
+    <a href="#lab">M10 · Laboratório guiado</a>
+    <a href="#glossario">Glossário</a>
+  </nav>
+
+  <main>
+    <!-- HERO -->
+    <div class="hero" id="intro">
+      <span class="tag">Curso técnico · nível intermediário</span>
+      <h1>AI-DLC &amp; SDLC na AWS com Kiro, Amazon Bedrock e Multi-Cloud</h1>
+      <p>Um curso prático sobre como a Inteligência Artificial transforma o ciclo de vida de desenvolvimento de software — do conceito à entrega em três nuvens (AWS, Azure e Google Cloud), com integrações reais de Jira e Git.</p>
+      <div class="chips">
+        <span class="chip">🎯 10 módulos</span>
+        <span class="chip">🏗️ Arquitetura de referência</span>
+        <span class="chip">🔄 Fluxos ponta a ponta</span>
+        <span class="chip">☁️ AWS · Azure · GCP</span>
+        <span class="chip">🧩 Jira · Git · CI/CD</span>
+        <span class="chip">🧪 Laboratório guiado</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h4>Para quem é este curso</h4>
+      <p>Times de produto e engenharia que querem entender e adotar o <strong>AI-Driven Development Lifecycle (AI-DLC)</strong>: a evolução do SDLC em que agentes de IA participam de cada fase, das especificações ao deploy. Você não precisa saber programar para acompanhar os conceitos, fluxos e decisões de arquitetura — os trechos de código são ilustrativos.</p>
+      <h4>O que você vai conseguir fazer ao final</h4>
+      <ul>
+        <li>Explicar a diferença entre SDLC tradicional e AI-DLC, e onde a IA agrega valor real.</li>
+        <li>Usar o <strong>Kiro</strong> para transformar uma ideia em specs, tarefas e código com rastreabilidade.</li>
+        <li>Escolher e orquestrar modelos no <strong>Amazon Bedrock</strong> com segurança e custo controlado.</li>
+        <li>Desenhar uma arquitetura de referência e uma estratégia de <strong>deploy multi-cloud</strong>.</li>
+        <li>Conectar o fluxo a <strong>Jira e Git</strong> com governança e trilha de auditoria.</li>
+      </ul>
+    </div>
+
+    <!-- M1 SDLC -->
+    <section id="sdlc">
+      <h2><span class="n">MÓDULO 1</span>O SDLC clássico — a base que a IA vai transformar</h2>
+      <p class="lead">Antes de falar de IA, é preciso ter clareza sobre o que estamos automatizando. O SDLC (Software Development Life Cycle) é o conjunto de fases que todo software percorre, do pedido inicial até a operação.</p>
+
+      <div class="diagram">
+        <div class="flow">
+          <div class="node"><span class="t">1. Requisitos</span><span class="d">O que construir</span></div>
+          <span class="arrow">→</span>
+          <div class="node"><span class="t">2. Design</span><span class="d">Como construir</span></div>
+          <span class="arrow">→</span>
+          <div class="node"><span class="t">3. Código</span><span class="d">Construir</span></div>
+          <span class="arrow">→</span>
+          <div class="node"><span class="t">4. Testes</span><span class="d">Validar</span></div>
+          <span class="arrow">→</span>
+          <div class="node"><span class="t">5. Deploy</span><span class="d">Entregar</span></div>
+          <span class="arrow">→</span>
+          <div class="node"><span class="t">6. Operação</span><span class="d">Manter</span></div>
+        </div>
+      </div>
+
+      <h3>As dores do SDLC tradicional</h3>
+      <table>
+        <tr><th>Fase</th><th>Dor recorrente</th><th>Custo para o negócio</th></tr>
+        <tr><td>Requisitos</td><td>Ambiguidade; o que foi pedido ≠ o que foi entendido</td><td>Retrabalho caro descoberto tarde</td></tr>
+        <tr><td>Design</td><td>Decisões de arquitetura não documentadas</td><td>Dívida técnica silenciosa</td></tr>
+        <tr><td>Código</td><td>Tempo gasto em código repetitivo (boilerplate)</td><td>Engenheiros seniores em tarefas de baixo valor</td></tr>
+        <tr><td>Testes</td><td>Cobertura baixa; testes escritos depois (ou nunca)</td><td>Bugs em produção</td></tr>
+        <tr><td>Deploy</td><td>Processos manuais, ambientes divergentes</td><td>Falhas de release, rollback lento</td></tr>
+      </table>
+
+      <div class="callout tip">
+        <div class="lbl">Analogia para o dia a dia</div>
+        <p>Pense no SDLC como construir uma casa. Requisitos é conversar com o morador; design é a planta do arquiteto; código é a obra; testes é a vistoria; deploy é a entrega das chaves; operação é a manutenção. A IA, no AI-DLC, entra como uma equipe de assistentes que já rascunha a planta, sugere materiais e antecipa problemas — mas o arquiteto (você) ainda decide.</p>
+      </div>
+    </section>
+
+    <!-- M2 AIDLC -->
+    <section id="aidlc">
+      <h2><span class="n">MÓDULO 2</span>AI-DLC — o ciclo de vida dirigido por IA</h2>
+      <p class="lead">AI-DLC (AI-Driven Development Lifecycle) não é "usar um chatbot para escrever código". É reorganizar o ciclo de desenvolvimento em torno de <strong>três princípios</strong> em que agentes de IA e humanos colaboram com papéis claros.</p>
+
+      <div class="grid grid-3">
+        <div class="card">
+          <h4>1 · Intenção → Spec</h4>
+          <p>A IA converte uma intenção em linguagem natural em uma <strong>especificação estruturada</strong> (requisitos, design, tarefas) que humanos revisam e aprovam antes de qualquer linha de código.</p>
+        </div>
+        <div class="card">
+          <h4>2 · Humano no comando</h4>
+          <p>O humano aprova em cada portão (gate). A IA propõe; a pessoa dispõe. Nada avança sem revisão nos pontos de decisão que importam.</p>
+        </div>
+        <div class="card">
+          <h4>3 · Rastreabilidade</h4>
+          <p>Cada artefato (código, teste, PR) aponta de volta para a spec e o requisito que o originou. Auditar "por que isso existe?" fica trivial.</p>
+        </div>
+      </div>
+
+      <h3>SDLC vs AI-DLC — o que muda em cada fase</h3>
+      <table>
+        <tr><th>Fase</th><th>SDLC tradicional</th><th>AI-DLC</th></tr>
+        <tr><td>Requisitos</td><td>Documento escrito à mão, revisões longas</td><td>IA gera user stories e critérios de aceite a partir da intenção; humano valida</td></tr>
+        <tr><td>Design</td><td>Arquiteto desenha do zero</td><td>IA propõe opções de arquitetura com trade-offs; humano escolhe</td></tr>
+        <tr><td>Código</td><td>Escrito linha a linha</td><td>Agente gera código a partir da spec aprovada, dentro das convenções do projeto</td></tr>
+        <tr><td>Testes</td><td>Escritos depois, se sobrar tempo</td><td>Gerados junto com o código a partir dos critérios de aceite</td></tr>
+        <tr><td>Deploy</td><td>Pipeline configurado manualmente</td><td>IA gera IaC e pipelines; deploy multi-cloud parametrizado</td></tr>
+        <tr><td>Operação</td><td>Alertas → engenheiro investiga</td><td>Agente triagem incidentes, sugere causa raiz e correção</td></tr>
+      </table>
+
+      <div class="callout warn">
+        <div class="lbl">Cuidado — o anti-padrão</div>
+        <p>AI-DLC <strong>não</strong> é gerar código sem spec e sem revisão ("vibe coding" em produção). Sem os portões humanos e a rastreabilidade, você troca dívida técnica por dívida de IA: código que ninguém entende, sem teste, sem origem clara. O ganho de velocidade só é sustentável com governança.</p>
+      </div>
+
+      <div class="quiz">
+        <div class="q">✅ Checagem rápida: qual é a diferença central entre SDLC e AI-DLC?</div>
+        <details><summary>Ver resposta</summary>
+        <p>No AI-DLC a IA participa de <em>cada fase</em> como colaboradora — gerando specs, design, código, testes e IaC — mas sob <strong>portões de aprovação humana</strong> e com <strong>rastreabilidade</strong> ligando cada artefato de volta à intenção original. Não é substituir o humano; é elevar o humano de "executor" para "revisor e decisor".</p>
+        </details>
+      </div>
+    </section>
+
+    <!-- M3 KIRO -->
+    <section id="kiro">
+      <h2><span class="n">MÓDULO 3</span>Kiro — desenvolvimento dirigido por specs</h2>
+      <p class="lead"><span class="badge kiro">KIRO</span> é o ambiente agêntico da AWS que operacionaliza o AI-DLC através de <strong>spec-driven development</strong>: em vez de pedir código direto, você descreve a intenção e o Kiro produz uma trilha estruturada de artefatos revisáveis.</p>
+
+      <h3>Os três artefatos do Kiro</h3>
+      <div class="diagram">
+        <div class="flow">
+          <div class="node k"><span class="t">requirements.md</span><span class="d">O quê + critérios de aceite (EARS)</span></div>
+          <span class="arrow">→</span>
+          <div class="node k"><span class="t">design.md</span><span class="d">Como: arquitetura, componentes, dados</span></div>
+          <span class="arrow">→</span>
+          <div class="node k"><span class="t">tasks.md</span><span class="d">Passos executáveis e rastreáveis</span></div>
+        </div>
+      </div>
+      <p>Cada tarefa em <code>tasks.md</code> referencia o requisito que atende. Quando o agente implementa uma tarefa, o commit/PR resultante carrega essa rastreabilidade — respondendo sempre "por que este código existe?".</p>
+
+      <h3>Kiro + Steering: ensinando as regras da casa</h3>
+      <p>Arquivos de <strong>steering</strong> (em <code>.kiro/steering/</code>) dão ao agente o contexto persistente do projeto: convenções de código, stack aprovada, regras de segurança, padrões de nomenclatura. É assim que o Kiro gera código que parece do seu time, não genérico.</p>
+      <pre><code># .kiro/steering/tech.md (exemplo)
+- Backend em Python 3.12, FastAPI. Nunca introduzir Flask.
+- Toda query SQL deve ser parametrizada (nunca concatenar strings).
+- IaC em AWS CDK (TypeScript). Recursos regionais só em sa-east-1.
+- Testes: pytest, cobertura mínima 80%.</code></pre>
+
+      <h3>Hooks: automação orientada a evento</h3>
+      <p>Hooks disparam ações do agente quando algo acontece no projeto (ex.: "ao salvar um arquivo de rota, gerar/atualizar o teste correspondente"). É a ponte entre a edição humana e a assistência automática.</p>
+
+      <div class="callout tip">
+        <div class="lbl">Papel do Kiro no AI-DLC</div>
+        <p>O Kiro é a <strong>camada de orquestração humano+agente</strong>: ele estrutura a intenção em specs revisáveis (fase de requisitos e design), gera o código e os testes (fase de construção), e mantém a rastreabilidade de ponta a ponta. Ele consome modelos via Amazon Bedrock — que é o tema do próximo módulo.</p>
+      </div>
+    </section>
+
+    <!-- M4 BEDROCK -->
+    <section id="bedrock">
+      <h2><span class="n">MÓDULO 4</span>Amazon Bedrock — o motor de modelos</h2>
+      <p class="lead"><span class="badge aws">BEDROCK</span> é o serviço gerenciado da AWS que dá acesso a modelos de fundação (Anthropic Claude, Amazon Nova, Meta Llama, Mistral e outros) via uma única API, sem gerenciar infraestrutura de GPU. É o motor por trás dos agentes do AI-DLC.</p>
+
+      <h3>Componentes que importam para o AI-DLC</h3>
+      <table>
+        <tr><th>Recurso</th><th>O que faz</th><th>Uso no ciclo</th></tr>
+        <tr><td>Foundation Models</td><td>Modelos prontos via API única</td><td>Gerar specs, código, testes, resumos</td></tr>
+        <tr><td>Knowledge Bases</td><td>RAG gerenciado sobre seus documentos</td><td>Dar contexto do domínio/negócio ao agente</td></tr>
+        <tr><td>Agents / Flows</td><td>Orquestração multi-passo com ferramentas</td><td>Automatizar tarefas do ciclo (triagem, deploy)</td></tr>
+        <tr><td>Guardrails</td><td>Filtros de conteúdo, PII e tópicos</td><td>Impedir vazamento de dados sensíveis</td></tr>
+        <tr><td>Model Evaluation</td><td>Comparar qualidade/custo de modelos</td><td>Escolher o modelo certo por tarefa</td></tr>
+      </table>
+
+      <h3>Escolha de modelo por tarefa (padrão de custo)</h3>
+      <p>Nem toda tarefa precisa do modelo mais caro. Um padrão comum no AI-DLC é rotear:</p>
+      <ul>
+        <li><strong>Tarefas simples</strong> (formatar, resumir, classificar) → modelo pequeno e barato.</li>
+        <li><strong>Tarefas de raciocínio</strong> (design de arquitetura, resolução de bug complexo) → modelo grande.</li>
+        <li><strong>Tarefas em massa/repetitivas</strong> → modelo médio com prompt caching.</li>
+      </ul>
+
+      <div class="callout warn">
+        <div class="lbl">Nota sobre a nova experiência AWS</div>
+        <p>Em contas da nova experiência AWS, alguns serviços exigem ativação de "advanced features" e há restrições regionais. Modelos do Bedrock precisam ter acesso habilitado explicitamente por região. Sempre confirme a disponibilidade do modelo na região do projeto antes de desenhar o fluxo.</p>
+      </div>
+
+      <pre><code># Exemplo ilustrativo: invocar um modelo via Bedrock (Python, boto3)
+import boto3, json
+brt = boto3.client("bedrock-runtime", region_name="sa-east-1")
+
+resp = brt.converse(
+    modelId="anthropic.claude-3-5-sonnet-...",
+    messages=[{"role":"user","content":[{"text":"Gere critérios de aceite EARS para: login com MFA."}]}],
+    inferenceConfig={"maxTokens": 800, "temperature": 0.2},
+)
+print(resp["output"]["message"]["content"][0]["text"])</code></pre>
+    </section>
+
+    <!-- M5 FLUXO -->
+    <section id="fluxo">
+      <h2><span class="n">MÓDULO 5</span>Fluxo AI-DLC ponta a ponta</h2>
+      <p class="lead">Aqui juntamos tudo: como uma intenção vira software em produção, com Kiro orquestrando, Bedrock como motor, e humanos nos portões de decisão.</p>
+
+      <h3>Fluxo com raias (humano ↔ agente)</h3>
+      <div class="diagram">
+        <div class="lane"><div class="laneName">Humano (PM/Eng)</div><div class="laneCells">
+          <div class="cell">💡 Descreve intenção</div>
+          <div class="cell">✅ Aprova spec</div>
+          <div class="cell">✅ Aprova design</div>
+          <div class="cell">👀 Revisa PR</div>
+          <div class="cell">🚀 Autoriza deploy</div>
+        </div></div>
+        <div class="arrow-down">↕</div>
+        <div class="lane"><div class="laneName">Kiro (agente)</div><div class="laneCells">
+          <div class="cell">📝 Gera requirements.md</div>
+          <div class="cell">🏗️ Gera design.md</div>
+          <div class="cell">📋 Quebra em tasks.md</div>
+          <div class="cell">💻 Implementa + testes</div>
+          <div class="cell">⚙️ Gera IaC + pipeline</div>
+        </div></div>
+        <div class="arrow-down">↕</div>
+        <div class="lane"><div class="laneName">Bedrock</div><div class="laneCells">
+          <div class="cell">🧠 Modelos + Knowledge Base + Guardrails</div>
+        </div></div>
+      </div>
+
+      <h3>Passo a passo</h3>
+      <div class="step"><div class="num">1</div><div class="body"><strong>Intenção → Spec</strong>O time descreve o que quer ("adicionar carrinho com cupom"). O Kiro, via Bedrock, gera <code>requirements.md</code> com user stories e critérios de aceite. Humano revisa e aprova. <span class="badge kiro">PORTÃO 1</span></div></div>
+      <div class="step"><div class="num">2</div><div class="body"><strong>Spec → Design</strong>O Kiro propõe <code>design.md</code>: componentes, modelo de dados, contratos de API, trade-offs. Humano escolhe a abordagem. <span class="badge kiro">PORTÃO 2</span></div></div>
+      <div class="step"><div class="num">3</div><div class="body"><strong>Design → Tarefas</strong>Quebra em <code>tasks.md</code>, cada uma ligada a um requisito. As tarefas viram issues no Jira (ver Módulo 8).</div></div>
+      <div class="step"><div class="num">4</div><div class="body"><strong>Implementação</strong>O agente executa tarefa por tarefa: gera código dentro das convenções (steering), gera testes a partir dos critérios de aceite, abre um PR no Git.</div></div>
+      <div class="step"><div class="num">5</div><div class="body"><strong>Revisão & CI</strong>PR dispara CI (build, testes, SAST). Um agente revisor comenta; humano dá o merge. <span class="badge kiro">PORTÃO 3</span></div></div>
+      <div class="step"><div class="num">6</div><div class="body"><strong>Deploy multi-cloud</strong>Pipeline promove o artefato para AWS/Azure/GCP conforme a estratégia (Módulo 7). Humano autoriza produção. <span class="badge kiro">PORTÃO 4</span></div></div>
+      <div class="step"><div class="num">7</div><div class="body"><strong>Operação</strong>Observabilidade alimenta um agente de operações que triagem alertas e sugere correções, reabrindo o ciclo.</div></div>
+    </section>
+
+    <!-- M6 ARQUITETURA -->
+    <section id="arquitetura">
+      <h2><span class="n">MÓDULO 6</span>Arquitetura de referência</h2>
+      <p class="lead">Uma visão de referência das camadas de um pipeline AI-DLC. Trate como um mapa a adaptar — não como prescrição única.</p>
+
+      <div class="diagram">
+        <div style="text-align:center;color:var(--muted);font-size:12px;letter-spacing:1px;margin-bottom:14px">CAMADA DE EXPERIÊNCIA</div>
+        <div class="flow">
+          <div class="node k"><span class="t">Kiro IDE / CLI</span><span class="d">Specs, agentes, hooks</span></div>
+          <span class="arrow">↔</span>
+          <div class="node"><span class="t">Dev / PM</span><span class="d">Humano nos portões</span></div>
+        </div>
+        <div class="arrow-down">↓</div>
+        <div style="text-align:center;color:var(--muted);font-size:12px;letter-spacing:1px;margin:14px 0">CAMADA DE INTELIGÊNCIA <span class="badge aws">AWS</span></div>
+        <div class="flow">
+          <div class="node b"><span class="t">Bedrock Models</span><span class="d">Claude/Nova/Llama</span></div>
+          <span class="arrow">·</span>
+          <div class="node b"><span class="t">Knowledge Base</span><span class="d">RAG do domínio</span></div>
+          <span class="arrow">·</span>
+          <div class="node b"><span class="t">Guardrails</span><span class="d">PII, conteúdo</span></div>
+          <span class="arrow">·</span>
+          <div class="node b"><span class="t">Agents/Flows</span><span class="d">Orquestração</span></div>
+        </div>
+        <div class="arrow-down">↓</div>
+        <div style="text-align:center;color:var(--muted);font-size:12px;letter-spacing:1px;margin:14px 0">CAMADA DE ENTREGA (SCM + CI/CD)</div>
+        <div class="flow">
+          <div class="node"><span class="t">Git</span><span class="d">GitHub/GitLab</span></div>
+          <span class="arrow">→</span>
+          <div class="node"><span class="t">Jira</span><span class="d">Tarefas/rastreio</span></div>
+          <span class="arrow">→</span>
+          <div class="node"><span class="t">CI/CD</span><span class="d">Build·Test·SAST</span></div>
+          <span class="arrow">→</span>
+          <div class="node"><span class="t">IaC</span><span class="d">Terraform/CDK</span></div>
+        </div>
+        <div class="arrow-down">↓</div>
+        <div style="text-align:center;color:var(--muted);font-size:12px;letter-spacing:1px;margin:14px 0">CAMADA DE EXECUÇÃO — MULTI-CLOUD</div>
+        <div class="flow">
+          <div class="node" style="border-color:var(--aws)"><span class="t cloud-aws">AWS</span><span class="d">ECS/EKS·Lambda·S3</span></div>
+          <span class="arrow">·</span>
+          <div class="node" style="border-color:var(--azure)"><span class="t cloud-azure">Azure</span><span class="d">AKS·Functions·Blob</span></div>
+          <span class="arrow">·</span>
+          <div class="node" style="border-color:var(--gcp)"><span class="t cloud-gcp">Google Cloud</span><span class="d">GKE·Cloud Run·GCS</span></div>
+        </div>
+        <div class="arrow-down">↓</div>
+        <div style="text-align:center;color:var(--muted);font-size:12px;letter-spacing:1px;margin:14px 0">CAMADA TRANSVERSAL — OBSERVABILIDADE, SEGURANÇA, FinOps</div>
+        <div class="flow">
+          <div class="node"><span class="t">Logs/Traces</span></div>
+          <span class="arrow">·</span>
+          <div class="node"><span class="t">IAM/Secrets</span></div>
+          <span class="arrow">·</span>
+          <div class="node"><span class="t">Custo/Budget</span></div>
+          <span class="arrow">·</span>
+          <div class="node"><span class="t">Auditoria</span></div>
+        </div>
+      </div>
+
+      <h3>Princípios de arquitetura</h3>
+      <ol>
+        <li><strong>Bedrock como plano de controle da IA.</strong> Centralize acesso a modelos, guardrails e knowledge bases na AWS; as outras nuvens consomem software gerado, não necessariamente o motor de IA.</li>
+        <li><strong>Artefatos portáveis.</strong> Empacote em containers (OCI) e IaC agnóstica onde possível — é o que torna o multi-cloud viável sem reescrever tudo.</li>
+        <li><strong>Um só plano de rastreabilidade.</strong> Spec → tarefa (Jira) → commit/PR (Git) → deploy. Nunca quebre essa cadeia.</li>
+        <li><strong>Segurança transversal, não etapa final.</strong> Guardrails, secrets e SAST estão em toda a pilha.</li>
+      </ol>
+    </section>
+
+    <!-- M7 MULTICLOUD -->
+    <section id="multicloud">
+      <h2><span class="n">MÓDULO 7</span>Deploy multi-cloud (AWS · Azure · GCP)</h2>
+      <p class="lead">"Multi-cloud" tem significados diferentes. Escolher a estratégia certa evita custo e complexidade desnecessários.</p>
+
+      <h3>Três estratégias — e quando usar cada uma</h3>
+      <div class="grid grid-3">
+        <div class="card">
+          <h4>A · Redundante</h4>
+          <p>A mesma aplicação roda em 2+ nuvens para resiliência ou requisito regulatório. Alto custo e complexidade. Use só quando o negócio exige.</p>
+        </div>
+        <div class="card">
+          <h4>B · Distribuída (best-of-breed)</h4>
+          <p>Cada nuvem faz o que faz melhor: IA na AWS (Bedrock), um serviço específico no GCP, integração corporativa no Azure. O caso mais comum.</p>
+        </div>
+        <div class="card">
+          <h4>C · Portável / anti-lock-in</h4>
+          <p>Um artefato (container) que pode ser reimplantado em qualquer nuvem. Não roda nas três ao mesmo tempo, mas está pronto para migrar.</p>
+        </div>
+      </div>
+
+      <h3>Serviços equivalentes por nuvem</h3>
+      <table>
+        <tr><th>Capacidade</th><th class="cloud-aws">AWS</th><th class="cloud-azure">Azure</th><th class="cloud-gcp">Google Cloud</th></tr>
+        <tr><td>Container gerenciado</td><td>ECS / EKS</td><td>AKS / Container Apps</td><td>GKE / Cloud Run</td></tr>
+        <tr><td>Serverless (funções)</td><td>Lambda</td><td>Functions</td><td>Cloud Functions</td></tr>
+        <tr><td>Object storage</td><td>S3</td><td>Blob Storage</td><td>Cloud Storage</td></tr>
+        <tr><td>Registry de imagens</td><td>ECR</td><td>ACR</td><td>Artifact Registry</td></tr>
+        <tr><td>Segredos</td><td>Secrets Manager</td><td>Key Vault</td><td>Secret Manager</td></tr>
+        <tr><td>IA generativa</td><td>Bedrock</td><td>Azure OpenAI / AI Foundry</td><td>Vertex AI</td></tr>
+      </table>
+
+      <h3>O que torna o multi-cloud viável</h3>
+      <ul>
+        <li><strong>Containers OCI:</strong> a mesma imagem roda em ECS, AKS ou Cloud Run com pouca mudança.</li>
+        <li><strong>IaC:</strong> Terraform com providers de cada nuvem (ou provisionar cada nuvem com sua ferramenta nativa a partir do mesmo pipeline). O Kiro pode gerar esses módulos.</li>
+        <li><strong>Pipeline único com estágios por nuvem:</strong> um workflow promove o artefato para cada alvo com aprovação humana antes de produção.</li>
+        <li><strong>Abstração de identidade e segredos:</strong> cada nuvem tem seu cofre; nunca hardcode credenciais no pipeline.</li>
+      </ul>
+
+      <pre><code># Terraform ilustrativo: mesmo container, três alvos
+module "aws_service"  { source = "./modules/aws-ecs"     image = var.image }
+module "azure_service"{ source = "./modules/azure-aca"   image = var.image }
+module "gcp_service"  { source = "./modules/gcp-cloudrun" image = var.image }</code></pre>
+
+      <div class="callout warn">
+        <div class="lbl">Armadilha do multi-cloud</div>
+        <p>Multi-cloud multiplica superfície de ataque, custo de FinOps e carga cognitiva do time. A pergunta não é "podemos?", mas "qual problema de negócio isso resolve?". Muitas vezes a resposta certa é single-cloud com uma estratégia de portabilidade (C), não rodar de fato nas três.</p>
+      </div>
+
+      <div class="quiz">
+        <div class="q">✅ Checagem: seu time quer IA generativa forte + presença em Azure por exigência de um cliente. Qual estratégia?</div>
+        <details><summary>Ver resposta</summary>
+        <p>Estratégia <strong>B (distribuída)</strong>: o motor de IA fica na AWS (Bedrock), enquanto a aplicação que o cliente exige roda no Azure, consumindo a IA via API. Você evita duplicar o plano de IA em duas nuvens e ainda atende o requisito do cliente.</p>
+        </details>
+      </div>
+    </section>
+
+    <!-- M8 INTEGRACOES -->
+    <section id="integracoes">
+      <h2><span class="n">MÓDULO 8</span>Integrações — Jira, Git e CI/CD</h2>
+      <p class="lead">O valor do AI-DLC só se sustenta se ele viver dentro das ferramentas que o time já usa. Aqui está a cadeia de integração.</p>
+
+      <h3>Cadeia de rastreabilidade completa</h3>
+      <div class="diagram">
+        <div class="flow">
+          <div class="node k"><span class="t">Kiro spec</span><span class="d">requirement REQ-12</span></div>
+          <span class="arrow">→</span>
+          <div class="node"><span class="t">Jira issue</span><span class="d">PROJ-345</span></div>
+          <span class="arrow">→</span>
+          <div class="node"><span class="t">Branch Git</span><span class="d">feature/PROJ-345</span></div>
+          <span class="arrow">→</span>
+          <div class="node"><span class="t">Commit/PR</span><span class="d">"PROJ-345: ..."</span></div>
+          <span class="arrow">→</span>
+          <div class="node"><span class="t">CI/CD</span><span class="d">build·test·deploy</span></div>
+        </div>
+      </div>
+
+      <h4>Integração com Jira</h4>
+      <ul>
+        <li>As tarefas de <code>tasks.md</code> geradas pelo Kiro viram <strong>issues no Jira</strong> (via API/automação), cada uma ligada ao requisito de origem.</li>
+        <li>O ID do Jira (ex.: <code>PROJ-345</code>) é embutido no nome da branch e na mensagem de commit — o Jira "linka" automaticamente o desenvolvimento à issue.</li>
+        <li>Ao fazer merge/deploy, o pipeline transiciona a issue (To Do → In Progress → Done) via webhook.</li>
+      </ul>
+
+      <h4>Integração com Git</h4>
+      <ul>
+        <li>O agente abre <strong>Pull/Merge Requests</strong> com descrição estruturada: o que mudou, testes, spec de origem.</li>
+        <li>Convenção de branch e commit padronizada permite rastrear qualquer linha de código de volta à intenção.</li>
+        <li>Um <strong>agente revisor</strong> comenta o PR (segurança, estilo, cobertura); o merge continua sendo decisão humana.</li>
+      </ul>
+
+      <h4>CI/CD</h4>
+      <p>O PR dispara o pipeline (GitHub Actions, GitLab CI, Azure DevOps, etc.): build → testes → SAST/scan de segredos → empacotamento em container → deploy por ambiente. Deploy em produção fica atrás de aprovação manual.</p>
+
+      <pre><code># Exemplo de mensagem de commit rastreável (gerada pelo agente)
+PROJ-345: adiciona validação de cupom no carrinho
+
+- Implementa endpoint POST /cart/coupon (REQ-12)
+- Testes de aceite para cupom válido/inválido/expirado
+- Fecha PROJ-345</code></pre>
+
+      <div class="callout tip">
+        <div class="lbl">Por que isso importa para o negócio</div>
+        <p>Com essa cadeia, um gestor de produto consegue responder, sem perguntar à engenharia: "esta funcionalidade que entrou ontem — de qual requisito ela veio, quem aprovou e o que foi testado?". Rastreabilidade vira governança sem burocracia extra.</p>
+      </div>
+    </section>
+
+    <!-- M9 GOVERNANCA -->
+    <section id="governanca">
+      <h2><span class="n">MÓDULO 9</span>Segurança, custo e governança</h2>
+      <p class="lead">A velocidade do AI-DLC precisa de freios. Estes são os controles que tornam a adoção segura e sustentável.</p>
+
+      <div class="grid grid-2">
+        <div class="card">
+          <h4>🔐 Segurança</h4>
+          <ul>
+            <li><strong>Guardrails do Bedrock</strong> filtram PII e conteúdo sensível nas entradas/saídas dos modelos.</li>
+            <li><strong>Scan de segredos</strong> no CI impede que credenciais entrem no repositório.</li>
+            <li><strong>SAST</strong> e revisão por agente pegam vulnerabilidades antes do merge.</li>
+            <li>Código gerado por IA usa padrões seguros por default (queries parametrizadas, validação de input).</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>💰 FinOps</h4>
+          <ul>
+            <li><strong>Roteamento de modelo</strong> por tarefa: não use o modelo caro para tudo.</li>
+            <li><strong>Budgets e alertas</strong> por nuvem; multi-cloud exige visão de custo consolidada.</li>
+            <li><strong>Prompt caching</strong> e limites de tokens para conter gasto de inferência.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>👤 Humano no loop</h4>
+          <ul>
+            <li>Portões de aprovação em spec, design, PR e deploy de produção.</li>
+            <li>A IA nunca faz merge nem deploy de produção sozinha por default.</li>
+            <li>Decisões de arquitetura e trade-offs de negócio permanecem humanas.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>📜 Auditoria & compliance</h4>
+          <ul>
+            <li>Trilha completa: quem aprovou o quê, quando e por quê.</li>
+            <li>Cada artefato aponta para sua spec de origem.</li>
+            <li>Logs de invocação de modelo para auditoria de uso de IA.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="callout warn">
+        <div class="lbl">Regra de ouro</div>
+        <p>Trate todo output de IA como <strong>proposta a ser revisada</strong>, não como verdade. Quanto maior o risco de uma ação (deploy em produção, mudança de segurança, exclusão de dados), mais explícita deve ser a aprovação humana.</p>
+      </div>
+    </section>
+
+    <!-- M10 LAB -->
+    <section id="lab">
+      <h2><span class="n">MÓDULO 10</span>Laboratório guiado — do zero ao deploy</h2>
+      <p class="lead">Um roteiro prático que amarra os módulos. Adapte à sua stack; os passos são conceituais, não um script pronto.</p>
+
+      <div class="step"><div class="num">1</div><div class="body"><strong>Preparar o projeto no Kiro</strong>Criar arquivos de <code>steering</code> com convenções e stack aprovada. Habilitar acesso aos modelos no Bedrock na região do projeto.</div></div>
+      <div class="step"><div class="num">2</div><div class="body"><strong>Escrever a intenção</strong>Descrever em linguagem natural a funcionalidade ("API de catálogo com busca"). Gerar <code>requirements.md</code> e revisar.</div></div>
+      <div class="step"><div class="num">3</div><div class="body"><strong>Aprovar design</strong>Deixar o Kiro propor <code>design.md</code> (containers, endpoints, dados). Escolher a abordagem.</div></div>
+      <div class="step"><div class="num">4</div><div class="body"><strong>Gerar tarefas e sincronizar com o Jira</strong>Quebrar em <code>tasks.md</code>; criar issues no Jira ligadas aos requisitos.</div></div>
+      <div class="step"><div class="num">5</div><div class="body"><strong>Implementar e abrir PR</strong>O agente implementa tarefa a tarefa, gera testes e abre PR no Git com a rastreabilidade.</div></div>
+      <div class="step"><div class="num">6</div><div class="body"><strong>CI + revisão</strong>Pipeline roda build, testes e scans; agente revisor comenta; humano faz o merge.</div></div>
+      <div class="step"><div class="num">7</div><div class="body"><strong>Empacotar e deployar multi-cloud</strong>Build de container; IaC promove para AWS (e opcionalmente Azure/GCP conforme a estratégia). Aprovação humana antes de produção.</div></div>
+      <div class="step"><div class="num">8</div><div class="body"><strong>Fechar o loop</strong>Observabilidade em produção alimenta o agente de operações; incidentes viram novas specs. O ciclo recomeça.</div></div>
+
+      <div class="callout tip">
+        <div class="lbl">Critério de sucesso do lab</div>
+        <p>Você consegue apontar, para qualquer linha de código em produção, a issue do Jira, o PR do Git, a spec do Kiro e o requisito de negócio que a originaram — e mostrar quem aprovou cada portão. Se essa cadeia está intacta, o AI-DLC está funcionando.</p>
+      </div>
+    </section>
+
+    <!-- GLOSSARIO -->
+    <section id="glossario">
+      <h2><span class="n">APÊNDICE</span>Glossário</h2>
+      <table>
+        <tr><th>Termo</th><th>Definição</th></tr>
+        <tr><td><strong>SDLC</strong></td><td>Software Development Life Cycle — as fases do desenvolvimento, dos requisitos à operação.</td></tr>
+        <tr><td><strong>AI-DLC</strong></td><td>AI-Driven Development Lifecycle — SDLC em que agentes de IA colaboram em cada fase, sob portões humanos e com rastreabilidade.</td></tr>
+        <tr><td><strong>Spec-driven development</strong></td><td>Abordagem em que a intenção vira uma especificação estruturada e revisável antes de gerar código.</td></tr>
+        <tr><td><strong>Kiro</strong></td><td>Ambiente agêntico da AWS que operacionaliza o AI-DLC via specs, steering e hooks.</td></tr>
+        <tr><td><strong>Steering</strong></td><td>Arquivos que dão contexto persistente do projeto ao agente (convenções, stack, regras).</td></tr>
+        <tr><td><strong>Amazon Bedrock</strong></td><td>Serviço gerenciado da AWS com acesso a modelos de fundação, knowledge bases, guardrails e agentes.</td></tr>
+        <tr><td><strong>Guardrails</strong></td><td>Filtros de segurança do Bedrock para conteúdo, PII e tópicos proibidos.</td></tr>
+        <tr><td><strong>Knowledge Base</strong></td><td>RAG gerenciado — dá ao modelo contexto dos seus documentos/domínio.</td></tr>
+        <tr><td><strong>IaC</strong></td><td>Infrastructure as Code — infraestrutura definida em código (Terraform, CDK).</td></tr>
+        <tr><td><strong>Portão / gate</strong></td><td>Ponto de aprovação humana obrigatória antes de avançar de fase.</td></tr>
+        <tr><td><strong>Rastreabilidade</strong></td><td>Cadeia que liga cada artefato (código, PR, deploy) de volta à spec e ao requisito de origem.</td></tr>
+        <tr><td><strong>Multi-cloud</strong></td><td>Uso de mais de um provedor de nuvem — redundante, distribuído ou portável.</td></tr>
+      </table>
+    </section>
+  </main>
+</div>
+<footer>
+  Curso gerado como material didático · AI-DLC &amp; SDLC na AWS com Kiro, Amazon Bedrock e Multi-Cloud (AWS · Azure · Google Cloud). Trechos de código são ilustrativos. Confirme disponibilidade de serviços/modelos por região antes de implementar.
+</footer>
+</body>
+</html>
