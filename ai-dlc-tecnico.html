@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI-DLC na Prática — Caso Planejador Floral</title>
+<title>AI-DLC na Prática — Chatbot RAG na AWS</title>
 <style>
   :root{
     --bg:#0d1117; --bg2:#161b22; --bg3:#1c2128; --border:#30363d;
@@ -69,7 +69,7 @@
 <nav class="side">
   <div class="brand">
     <h1>AI-DLC na Prática</h1>
-    <span>Caso real: Planejador Floral</span>
+    <span>Chatbot RAG na AWS</span>
   </div>
   <a href="./index.html" class="back">← Voltar ao curso principal</a>
   <a href="#intro" class="mod"><span class="n">00</span>Introdução</a>
@@ -88,8 +88,8 @@
 <main>
 <header class="hero" id="intro">
   <span class="tag">Curso Técnico · Nível Sênior</span>
-  <h1>AI-DLC na prática: da intenção ao deploy, com humano no loop</h1>
-  <p class="lead">Um estudo de caso técnico de ponta a ponta. Construímos um assistente de IA real — RAG + Foundation Model + Guardrails na AWS — governado por um ciclo AI-DLC com Jira e GitHub. Este curso documenta as decisões, o código e, principalmente, os problemas reais que só aparecem quando se constrói de verdade.</p>
+  <h1>AI-DLC na prática: um chatbot RAG da intenção ao deploy, com humano no loop</h1>
+  <p class="lead">Um estudo de caso técnico de ponta a ponta. Construímos um assistente conversacional que responde a partir de uma base de conhecimento própria — RAG + Foundation Model + Guardrails na AWS — governado por um ciclo AI-DLC com Jira e GitHub. Este curso documenta as decisões, o código e, principalmente, os problemas reais que só aparecem quando se constrói de verdade.</p>
   <div class="audience">
     <span>👤 Devs sênior</span><span>🏛️ Arquitetos</span><span>🧭 Líderes técnicos</span>
   </div>
@@ -111,10 +111,10 @@ INTENT ──▶ REQUIREMENTS ──▶ DESIGN ──▶ TASKS ──▶ CODE �
 
 <section id="m2">
   <h2><span class="mnum">MÓDULO 02</span>Arquitetura de referência</h2>
-  <p>O sistema que construímos (assistente de planejamento floral para eventos) é uma arquitetura serverless RAG padrão, com três serviços do Amazon Bedrock. Toda a infra em <code>sa-east-1</code>.</p>
+  <p>O sistema é um <strong>chatbot RAG</strong>: recebe uma pergunta, recupera contexto de uma base de conhecimento própria e gera a resposta com um LLM. Arquitetura serverless com três serviços do Amazon Bedrock. Toda a infra em região única.</p>
   <div class="diagram">┌──────────┐   HTTPS + x-api-key    ┌──────────────┐      ┌────────────────────────┐
 │ Cliente  │ ─────────────────────▶ │ API Gateway  │ ───▶ │ Lambda (Python 3.12)    │
-│ (front)  │   + CORS restrito      │ (REST, key)  │      │ handler → planner        │
+│ (front)  │   + CORS restrito      │ (REST, key)  │      │ handler → orquestrador   │
 └──────────┘                        └──────────────┘      └───────────┬────────────┘
                                                                       │
               ┌───────────────────────────────────────────────────────┼──────────────────┐
@@ -130,9 +130,9 @@ INTENT ──▶ REQUIREMENTS ──▶ DESIGN ──▶ TASKS ──▶ CODE �
    Observabilidade transversal: CloudWatch Logs (JSON) + Métricas (EMF) + X-Ray</div>
   <h3>Fluxo de uma requisição</h3>
   <ol>
-    <li><code>POST /planejar</code> com JSON do pedido (tipo de evento, mês, ambiente, paleta).</li>
+    <li><code>POST /chat</code> com a pergunta do usuário (JSON).</li>
     <li>Lambda valida o payload e monta a <em>query</em> de recuperação.</li>
-    <li><strong>Retrieve</strong> na Knowledge Base (RAG) → trechos relevantes do documento curado.</li>
+    <li><strong>Retrieve</strong> na Knowledge Base (RAG) → trechos relevantes dos documentos indexados.</li>
     <li>Se não há contexto, responde "sem informação suficiente" (não alucina).</li>
     <li><strong>InvokeModel</strong> (via API Converse) com contexto + guardrail aplicado.</li>
     <li>Log estruturado + métricas + trace X-Ray.</li>
@@ -152,10 +152,10 @@ INTENT ──▶ REQUIREMENTS ──▶ DESIGN ──▶ TASKS ──▶ CODE �
   <h3>Specs — o ciclo de uma feature (3 fases + aprovação)</h3>
   <p>Requisitos em formato <strong>EARS</strong> (Easy Approach to Requirements Syntax) — cláusulas testáveis:</p>
   <pre><code><span class="cm"># requirements.md — critério de aceite EARS</span>
-QUANDO o usuário informar tipo de evento E mês/estação,
-O SISTEMA DEVE retornar flores de estação adequadas.
+QUANDO o usuário enviar uma pergunta sobre o domínio,
+O SISTEMA DEVE responder com base nos documentos recuperados.
 
-QUANDO a KB não cobrir o assunto,
+QUANDO a base de conhecimento não cobrir o assunto,
 O SISTEMA DEVE dizer que não tem informação suficiente,
 em vez de inventar.</code></pre>
   <p>Cada fase termina num <em>checkbox de aprovação</em>. O design só começa quando os requisitos são aprovados; as tasks só quando o design é aprovado. As tasks viram os cards do Jira 1:1.</p>
@@ -168,7 +168,7 @@ em vez de inventar.</code></pre>
   <h3>Sync de card no merge</h3>
   <pre><code><span class="cm"># .github/scripts/jira_sync.py — trecho</span>
 <span class="kw">def</span> <span class="fn">find_issue_key</span>(text: str) -> str | <span class="nb">None</span>:
-    m = re.search(<span class="st">r"\bFLOR-\d+\b"</span>, text)  <span class="cm"># smart commit</span>
+    m = re.search(<span class="st">r"\b[A-Z]+-\d+\b"</span>, text)  <span class="cm"># smart commit (ex.: PROJ-12)</span>
     <span class="kw">return</span> m.group(<span class="nb">0</span>) <span class="kw">if</span> m <span class="kw">else</span> <span class="nb">None</span>
 
 <span class="kw">def</span> <span class="fn">transition_to</span>(key: str, name: str) -> <span class="nb">None</span>:
@@ -191,40 +191,42 @@ em vez de inventar.</code></pre>
 <section id="m5">
   <h2><span class="mnum">MÓDULO 05</span>Bedrock: Knowledge Base + Foundation Model + Guardrails</h2>
   <h3>Knowledge Base (RAG)</h3>
-  <p>Criar uma KB via API pura é frágil (7 recursos: role, 3 políticas OpenSearch, índice vetorial, KB, data source). O <strong>índice vetorial</strong> exige uma chamada HTTP assinada (SigV4) ao endpoint <code>aoss</code> — que o sandbox bloqueia. <strong>Solução prática: "Quick create vector store" no console</strong>, que cria coleção + índice automaticamente. Depois, o runtime só chama <code>Retrieve</code>:</p>
+  <p>Criar uma KB via API pura é frágil (7 recursos: role, 3 políticas OpenSearch, índice vetorial, KB, data source). O <strong>índice vetorial</strong> exige uma chamada HTTP assinada (SigV4) ao endpoint <code>aoss</code>. <strong>Solução prática: "Quick create vector store" no console</strong>, que cria coleção + índice automaticamente. Depois, ingira os documentos (S3 → Sync) e o runtime só chama <code>Retrieve</code>:</p>
   <pre><code><span class="cm"># src/bedrock_kb.py</span>
 resp = client.retrieve(
     knowledgeBaseId=kb_id,
-    retrievalQuery={<span class="st">"text"</span>: consulta},
+    retrievalQuery={<span class="st">"text"</span>: consulta_do_usuario},
     retrievalConfiguration={<span class="st">"vectorSearchConfiguration"</span>: {<span class="st">"numberOfResults"</span>: <span class="nb">5</span>}},
 )</code></pre>
+  <div class="callout tip"><span class="ct">Documentos autocontidos</span>Para RAG, prefira documentos-fonte cujas seções sejam <strong>autocontidas</strong> (repetem o contexto necessário). O chunking automático do Bedrock lida melhor com isso, e cada trecho recuperado faz sentido isolado.</div>
   <h3>Foundation Model — use a API Converse</h3>
   <p>Decisão de arquitetura chave: em vez de <code>InvokeModel</code> com o payload específico de cada modelo (Claude ≠ Nova ≠ DeepSeek), usamos a <strong>API Converse</strong> — formato unificado. Trocar de modelo vira mudar uma string.</p>
   <pre><code><span class="cm"># src/bedrock_fm.py — agnóstico de modelo</span>
 resp = client.converse(
-    modelId=model_id,                       <span class="cm"># deepseek.v3.2, claude, etc.</span>
+    modelId=model_id,                       <span class="cm"># deepseek, claude, mistral, nova…</span>
     system=[{<span class="st">"text"</span>: SYSTEM_PROMPT}],
-    messages=[{<span class="st">"role"</span>: <span class="st">"user"</span>, <span class="st">"content"</span>: [{<span class="st">"text"</span>: prompt}]}],
+    messages=[{<span class="st">"role"</span>: <span class="st">"user"</span>, <span class="st">"content"</span>: [{<span class="st">"text"</span>: prompt_com_contexto}]}],
     inferenceConfig={<span class="st">"maxTokens"</span>: <span class="nb">900</span>, <span class="st">"temperature"</span>: <span class="nb">0.3</span>},
     guardrailConfig={<span class="st">"guardrailIdentifier"</span>: gid, <span class="st">"guardrailVersion"</span>: ver},
 )</code></pre>
   <div class="callout tip"><span class="ct">Por que Converse</span>Desacopla o serviço do fornecedor do modelo. O mesmo código serve Claude, DeepSeek, Mistral e Nova. Em produção, isso é <strong>portabilidade de modelo</strong> sem refatoração.</div>
   <h3>Guardrails</h3>
-  <p>Guardrail do Bedrock aplicado nas duas pontas: tópicos negados, filtros de conteúdo (HATE/SEXUAL/VIOLENCE) e PII. A calibração é a parte difícil (ver Módulo 08).</p>
+  <p>Guardrail do Bedrock aplicado nas duas pontas: tópicos negados (manter o bot no domínio), filtros de conteúdo (HATE/SEXUAL/VIOLENCE) e PII. A calibração é a parte difícil (ver Módulo 08).</p>
 </section>
 
 <section id="m6">
   <h2><span class="mnum">MÓDULO 06</span>Segurança & as travas da conta gerenciada</h2>
-  <p>A conta usada é uma "nova experiência AWS", com <strong>SCP/RCP gerenciadas e não editáveis</strong>. Isso impõe restrições que mudam decisões de arquitetura:</p>
-  <div class="callout gotcha"><span class="ct">Restrição estrutural</span><strong>POST anônimo é bloqueado.</strong> Endpoint público sem autenticação (API Gateway sem auth, ou Lambda Function URL <code>AuthType=NONE</code>) retorna <code>403</code> na borda — antes de chegar ao seu código. A RCP não é editável.</div>
+  <p>Contas AWS gerenciadas (ex.: a "nova experiência AWS") podem ter <strong>SCP/RCP gerenciadas e não editáveis</strong>. Isso impõe restrições que mudam decisões de arquitetura:</p>
+  <div class="callout gotcha"><span class="ct">Restrição estrutural</span><strong>POST anônimo pode ser bloqueado.</strong> Endpoint público sem autenticação (API Gateway sem auth, ou Lambda Function URL <code>AuthType=NONE</code>) retorna <code>403</code> na borda — antes de chegar ao seu código. Se a RCP não é editável, não há como contornar por policy: mude a estratégia de auth.</div>
   <h3>Matriz de autenticação para front-end</h3>
   <table>
-    <tr><th>Abordagem</th><th>Passa na trava?</th><th>Chave no browser?</th><th>Veredito</th></tr>
-    <tr><td>Anônimo + CORS</td><td><span class="pill no">Não (403)</span></td><td>—</td><td>Inviável nesta conta</td></tr>
+    <tr><th>Abordagem</th><th>Passa em conta travada?</th><th>Segredo no browser?</th><th>Veredito</th></tr>
+    <tr><td>Anônimo + CORS</td><td><span class="pill no">Não (403)</span></td><td>—</td><td>Inviável em conta travada</td></tr>
     <tr><td>API Key + CORS</td><td><span class="pill ok">Sim</span></td><td>Sim (exposta)</td><td>OK p/ baixo risco</td></tr>
     <tr><td>IAM (SigV4)</td><td><span class="pill ok">Sim</span></td><td>Não</td><td>Chato p/ front puro</td></tr>
     <tr><td>Proxy backend</td><td><span class="pill ok">Sim</span></td><td>Não</td><td>Padrão correto</td></tr>
   </table>
+  <div class="callout tip"><span class="ct">Chave nunca no cliente</span>Para produção, o padrão correto é um <strong>proxy no seu backend</strong> (Netlify/Vercel Function, ou uma API própria) que guarda a credencial e chama o serviço por trás. O navegador nunca vê o segredo. API Key no front só se justifica para conteúdo não-sensível de baixo tráfego, com rate limit.</div>
   <h3>CORS que não mascara erros</h3>
   <p>Sutileza crítica: um <code>403</code> de API Key gerado pelo <strong>API Gateway</strong> não passa pela Lambda, então não tem header CORS — e o navegador reporta "erro de CORS" mascarando o 403 real. Solução: <code>GatewayResponse</code> com CORS nas respostas de erro.</p>
   <pre><code><span class="cm"># template.yaml — erros do API GW respondem com CORS</span>
@@ -233,7 +235,7 @@ GatewayResponse4xx:
   Properties:
     ResponseType: DEFAULT_4XX
     ResponseParameters:
-      gatewayresponse.header.Access-Control-Allow-Origin: <span class="st">"'https://amenci.com.br'"</span></code></pre>
+      gatewayresponse.header.Access-Control-Allow-Origin: <span class="st">"'https://seu-dominio.com'"</span></code></pre>
   <div class="callout warn"><span class="ct">Regra de ouro CORS</span>O preflight <code>OPTIONS</code> NUNCA deve exigir API Key — o navegador não envia a chave no preflight. Marque <code>ApiKeyRequired: false</code> só no OPTIONS.</div>
 </section>
 
@@ -245,32 +247,32 @@ emf = {
   <span class="st">"_aws"</span>: {
     <span class="st">"Timestamp"</span>: <span class="nb">int</span>(time.time()*<span class="nb">1000</span>),
     <span class="st">"CloudWatchMetrics"</span>: [{
-      <span class="st">"Namespace"</span>: <span class="st">"PlanejadorFloral"</span>,
+      <span class="st">"Namespace"</span>: <span class="st">"ChatbotRAG"</span>,
       <span class="st">"Dimensions"</span>: [[<span class="st">"service"</span>]],
       <span class="st">"Metrics"</span>: [{<span class="st">"Name"</span>: <span class="st">"LatenciaMs"</span>}],
     }],
   },
-  <span class="st">"service"</span>: <span class="st">"planejador-floral"</span>,
+  <span class="st">"service"</span>: <span class="st">"chatbot-rag"</span>,
   <span class="st">"LatenciaMs"</span>: <span class="nb">812.0</span>,
 }
 <span class="fn">print</span>(json.dumps(emf))  <span class="cm"># CloudWatch faz o resto</span></code></pre>
-  <p>Complementado por logs JSON estruturados (um evento por linha) e <strong>X-Ray</strong> (<code>Tracing: Active</code> no template) para o trace distribuído das chamadas Bedrock.</p>
+  <p>Complementado por logs JSON estruturados (um evento por linha, ex.: latência, se houve contexto recuperado, se o guardrail bloqueou) e <strong>X-Ray</strong> (<code>Tracing: Active</code> no template) para o trace distribuído das chamadas Bedrock.</p>
 </section>
 
 <section id="m8">
   <h2><span class="mnum">MÓDULO 08</span>Armadilhas reais (o que só aparece construindo)</h2>
   <p>Este é o módulo mais valioso para um arquiteto: os problemas que nenhum tutorial menciona.</p>
   <h4>1. Deprecações de API silenciosas</h4>
-  <p>O endpoint <code>/rest/api/3/search</code> do Jira foi <strong>removido</strong> (HTTP 410 Gone) → migrar para <code>/rest/api/3/search/jql</code>. Actions em Node 20 deprecadas → <code>checkout@v5</code>, <code>setup-python@v6</code>.</p>
+  <p>O endpoint <code>/rest/api/3/search</code> do Jira foi <strong>removido</strong> (HTTP 410 Gone) → migrar para <code>/rest/api/3/search/jql</code>. Actions em Node 20 deprecadas → <code>checkout@v5</code>, <code>setup-python@v6</code>. Lição: automações contra APIs externas precisam de manutenção contínua.</p>
   <h4>2. Localização quebra automação</h4>
-  <p>O board Jira em português tem transições <code>A fazer / Fazendo / Em análise / Feito</code>. O script tentava <code>"Done"</code> e falhava silenciosamente. Lição: <strong>não hardcode nomes de transição em inglês.</strong></p>
-  <h4>3. Model access gate (Anthropic)</h4>
-  <p>O Claude retornou <code>ResourceNotFoundException: Model use case details have not been submitted</code>. A conta precisa preencher um formulário de caso de uso — um gate de compliance externo. Contornado migrando para <strong>API Converse + modelo já liberado (DeepSeek)</strong>, sem mudar código.</p>
+  <p>Um board Jira em português tem transições <code>A fazer / Fazendo / Em análise / Feito</code>. Um script que tentava <code>"Done"</code> falhava silenciosamente. Lição: <strong>não hardcode nomes de transição em inglês</strong>; descubra-os via API.</p>
+  <h4>3. Model access gate</h4>
+  <p>Alguns modelos (ex.: Anthropic) exigem preencher um <strong>formulário de caso de uso</strong> na conta antes de responder — retornam <code>ResourceNotFoundException: Model use case details have not been submitted</code>. Contorno sem bloquear: usar a <strong>API Converse + um modelo já liberado</strong>, trocando o ID sem mudar código.</p>
   <h4>4. Guardrail: falso positivo por definição ampla</h4>
-  <p>Definir tópico negado por <em>exclusão</em> ("tudo que não é flores") fez o classificador bloquear o <strong>próprio domínio</strong> — um pedido legítimo de aniversário de 15 anos veio barrado. A correção passou por 3 versões:</p>
+  <p>Definir tópico negado por <em>exclusão</em> ("tudo que não é o meu domínio") faz o classificador bloquear o <strong>próprio domínio</strong> — perguntas legítimas vêm barradas. A calibração passou por 3 versões:</p>
   <table>
     <tr><th>Versão</th><th>Definição</th><th>Resultado</th></tr>
-    <tr><td>v1</td><td>"tudo que não é flores" (exclusão)</td><td><span class="pill no">Bloqueia domínio legítimo</span></td></tr>
+    <tr><td>v1</td><td>"tudo fora do domínio" (exclusão)</td><td><span class="pill no">Bloqueia o domínio legítimo</span></td></tr>
     <tr><td>v2</td><td>genérica demais</td><td><span class="pill no">Não bloqueia o que devia</span></td></tr>
     <tr><td>v3</td><td>categorias específicas (finanças, código, saúde) + exemplos</td><td><span class="pill ok">Calibrado</span></td></tr>
   </table>
@@ -284,10 +286,10 @@ emf = {
     <tr><td>API Converse</td><td>InvokeModel por modelo</td><td>Portabilidade de modelo sem refatorar; troca por env var</td></tr>
     <tr><td>Vector store gerenciado (Quick create)</td><td>OpenSearch manual via API</td><td>Índice vetorial exige SigV4 ao endpoint aoss; console cria tudo</td></tr>
     <tr><td>Métricas EMF</td><td>PutMetricData</td><td>Zero custo de API, zero latência extra</td></tr>
-    <tr><td>API Key + CORS</td><td>Proxy backend</td><td>Site estático sem backend; risco baixo (recomendador de flores) + rate limit</td></tr>
+    <tr><td>Proxy backend p/ o segredo</td><td>API Key no front</td><td>Chave nunca no navegador; correto para produção</td></tr>
     <tr><td>IAM role por-recurso</td><td>role ampla</td><td>Permissão mínima: Retrieve só nesta KB, InvokeModel só neste modelo</td></tr>
   </table>
-  <div class="callout tip"><span class="ct">Para produção sensível</span>A API Key no front é aceitável para conteúdo não-sensível de baixo tráfego. Para dados sensíveis, o padrão correto é um <strong>proxy no seu backend</strong> que guarda a credencial — a chave nunca chega ao navegador. CORS protege o navegador, mas não barra <code>curl</code> (Origin é forjável).</div>
+  <div class="callout tip"><span class="ct">Regra prática</span>CORS protege o navegador, mas não barra <code>curl</code> (o header <code>Origin</code> é forjável). Para segurança real do endpoint, combine autenticação (API Key/IAM/proxy) com CORS — nunca dependa só de CORS.</div>
 </section>
 
 <section id="m10">
@@ -307,6 +309,7 @@ emf = {
   </ul>
   <h3>Segurança & operação</h3>
   <ul>
+    <li>Segredo nunca no cliente — proxy no backend para produção</li>
     <li>Permissão IAM mínima por recurso (não por serviço)</li>
     <li>CORS nos <em>erros</em> também (GatewayResponse), senão o browser mascara 403</li>
     <li>Guardrail: tópicos por categoria específica; teste falso positivo E negativo</li>
@@ -314,7 +317,7 @@ emf = {
     <li>FinOps: vector store (OpenSearch Serverless) cobra 24/7 — planeje teardown</li>
   </ul>
   <div class="footer">
-    <p>Estudo de caso: <strong>Planejador Floral</strong> — assistente de recomendação floral para eventos. Stack: AWS Lambda + API Gateway + Bedrock (Knowledge Base + Foundation Model via Converse + Guardrails) + SAM, governado por Kiro (steering/specs/tasks) com CI/CD Jira + GitHub. Região sa-east-1.</p>
+    <p>Estudo de caso: <strong>chatbot RAG</strong> — assistente conversacional que responde a partir de uma base de conhecimento própria. Stack: AWS Lambda + API Gateway + Bedrock (Knowledge Base + Foundation Model via Converse + Guardrails) + SAM, governado por Kiro (steering/specs/tasks) com CI/CD Jira + GitHub.</p>
     <p style="margin-top:8px">Construído de ponta a ponta via ciclo AI-DLC com aprovação humana em cada fase. <a href="./index.html" style="color:var(--accent2)">← Voltar ao curso principal</a></p>
   </div>
 </section>
