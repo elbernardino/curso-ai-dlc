@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI-DLC na Prática — Caso Planejador Floral</title>
+<style>
+  :root{
+    --bg:#0d1117; --bg2:#161b22; --bg3:#1c2128; --border:#30363d;
+    --text:#e6edf3; --muted:#8b949e; --accent:#3fb950; --accent2:#58a6ff;
+    --amber:#d29922; --red:#f85149; --code-bg:#0b0f14; --purple:#bc8cff;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.65;font-size:16px}
+  .wrap{display:flex;max-width:1400px;margin:0 auto}
+  nav.side{position:sticky;top:0;height:100vh;width:290px;flex-shrink:0;overflow-y:auto;background:var(--bg2);border-right:1px solid var(--border);padding:24px 0}
+  nav.side .brand{padding:0 24px 18px;border-bottom:1px solid var(--border);margin-bottom:14px}
+  nav.side .brand h1{font-size:17px;font-weight:700;color:#fff;line-height:1.3}
+  nav.side .brand span{font-size:12px;color:var(--muted);display:block;margin-top:4px}
+  nav.side .back{display:block;padding:8px 24px;color:var(--accent2);text-decoration:none;font-size:13px;margin-bottom:8px}
+  nav.side .back:hover{text-decoration:underline}
+  nav.side a{display:block;padding:8px 24px;color:var(--muted);text-decoration:none;font-size:14px;border-left:2px solid transparent;transition:.15s}
+  nav.side a:hover{color:var(--text);background:var(--bg3)}
+  nav.side a.mod{color:var(--text);font-weight:600;margin-top:10px}
+  nav.side a .n{color:var(--accent);font-variant-numeric:tabular-nums;margin-right:8px;font-size:12px}
+  main{flex:1;min-width:0;padding:48px 56px 120px;max-width:920px}
+  header.hero{margin-bottom:48px;padding-bottom:32px;border-bottom:1px solid var(--border)}
+  header.hero .tag{display:inline-block;background:rgba(63,185,80,.12);color:var(--accent);border:1px solid rgba(63,185,80,.3);padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;margin-bottom:18px}
+  header.hero h1{font-size:40px;font-weight:800;line-height:1.15;color:#fff;letter-spacing:-.02em;margin-bottom:16px}
+  header.hero p.lead{font-size:18px;color:var(--muted);max-width:680px}
+  .audience{display:flex;gap:10px;flex-wrap:wrap;margin-top:24px}
+  .audience span{background:var(--bg3);border:1px solid var(--border);padding:6px 14px;border-radius:8px;font-size:13px;color:var(--text)}
+  section{margin-bottom:56px;scroll-margin-top:24px}
+  section h2{font-size:26px;font-weight:700;color:#fff;margin-bottom:8px;letter-spacing:-.01em}
+  section h2 .mnum{color:var(--accent);font-size:15px;font-weight:600;display:block;margin-bottom:2px;font-variant-numeric:tabular-nums}
+  section h3{font-size:18px;font-weight:650;color:var(--accent2);margin:28px 0 10px}
+  section h4{font-size:15px;font-weight:650;color:var(--text);margin:20px 0 8px}
+  p{margin-bottom:14px;color:#c9d1d9}
+  ul,ol{margin:0 0 16px 22px}
+  li{margin-bottom:7px;color:#c9d1d9}
+  code{background:var(--code-bg);border:1px solid var(--border);border-radius:5px;padding:1px 6px;font-family:"SF Mono",Menlo,Monaco,Consolas,monospace;font-size:13.5px;color:var(--purple)}
+  pre{background:var(--code-bg);border:1px solid var(--border);border-radius:10px;padding:18px 20px;overflow-x:auto;margin:14px 0;font-size:13.5px;line-height:1.6}
+  pre code{background:none;border:none;padding:0;color:#c9d1d9;font-family:"SF Mono",Menlo,Monaco,Consolas,monospace}
+  .cm{color:#8b949e;font-style:italic}
+  .kw{color:#ff7b72}.st{color:#a5d6ff}.fn{color:#d2a8ff}.nb{color:#79c0ff}
+  .callout{border-radius:10px;padding:16px 20px;margin:18px 0;border:1px solid;font-size:14.5px}
+  .callout .ct{font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;display:block}
+  .callout.tip{background:rgba(63,185,80,.08);border-color:rgba(63,185,80,.3)}
+  .callout.tip .ct{color:var(--accent)}
+  .callout.warn{background:rgba(210,153,34,.08);border-color:rgba(210,153,34,.3)}
+  .callout.warn .ct{color:var(--amber)}
+  .callout.gotcha{background:rgba(248,81,73,.07);border-color:rgba(248,81,73,.3)}
+  .callout.gotcha .ct{color:var(--red)}
+  table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px}
+  th,td{text-align:left;padding:10px 14px;border:1px solid var(--border)}
+  th{background:var(--bg3);color:#fff;font-weight:650}
+  td{color:#c9d1d9;vertical-align:top}
+  .diagram{background:var(--code-bg);border:1px solid var(--border);border-radius:10px;padding:22px;margin:18px 0;font-family:"SF Mono",Menlo,monospace;font-size:12.5px;line-height:1.5;color:#c9d1d9;overflow-x:auto;white-space:pre}
+  .pill{display:inline-block;padding:2px 9px;border-radius:6px;font-size:12px;font-weight:600}
+  .pill.ok{background:rgba(63,185,80,.15);color:var(--accent)}
+  .pill.no{background:rgba(248,81,73,.15);color:var(--red)}
+  .footer{border-top:1px solid var(--border);margin-top:40px;padding-top:24px;color:var(--muted);font-size:13px}
+  @media(max-width:900px){nav.side{display:none}main{padding:28px 18px 80px}header.hero h1{font-size:30px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="side">
+  <div class="brand">
+    <h1>AI-DLC na Prática</h1>
+    <span>Caso real: Planejador Floral</span>
+  </div>
+  <a href="./index.html" class="back">← Voltar ao curso principal</a>
+  <a href="#intro" class="mod"><span class="n">00</span>Introdução</a>
+  <a href="#m1" class="mod"><span class="n">01</span>O que é AI-DLC</a>
+  <a href="#m2" class="mod"><span class="n">02</span>Arquitetura de referência</a>
+  <a href="#m3" class="mod"><span class="n">03</span>Specs & steering</a>
+  <a href="#m4" class="mod"><span class="n">04</span>CI/CD Jira + GitHub</a>
+  <a href="#m5" class="mod"><span class="n">05</span>Bedrock: KB + FM + Guardrails</a>
+  <a href="#m6" class="mod"><span class="n">06</span>Segurança & travas da conta</a>
+  <a href="#m7" class="mod"><span class="n">07</span>Observabilidade</a>
+  <a href="#m8" class="mod"><span class="n">08</span>Armadilhas reais</a>
+  <a href="#m9" class="mod"><span class="n">09</span>Trade-offs de arquitetura</a>
+  <a href="#m10" class="mod"><span class="n">10</span>Checklist do arquiteto</a>
+</nav>
+
+<main>
+<header class="hero" id="intro">
+  <span class="tag">Curso Técnico · Nível Sênior</span>
+  <h1>AI-DLC na prática: da intenção ao deploy, com humano no loop</h1>
+  <p class="lead">Um estudo de caso técnico de ponta a ponta. Construímos um assistente de IA real — RAG + Foundation Model + Guardrails na AWS — governado por um ciclo AI-DLC com Jira e GitHub. Este curso documenta as decisões, o código e, principalmente, os problemas reais que só aparecem quando se constrói de verdade.</p>
+  <div class="audience">
+    <span>👤 Devs sênior</span><span>🏛️ Arquitetos</span><span>🧭 Líderes técnicos</span>
+  </div>
+</header>
+
+<section id="m1">
+  <h2><span class="mnum">MÓDULO 01</span>O que é AI-DLC (e por que arquiteto deve se importar)</h2>
+  <p><strong>AI-DLC (AI-Driven Development Lifecycle)</strong> é um ciclo de desenvolvimento em que a IA participa de cada fase, mas cada transição de fase passa por um <em>gate de aprovação humana</em>. Em vez de "prompt → código", o fluxo é <code>intenção → requisitos → design → tasks → código → deploy</code>, e cada artefato é revisável e versionado.</p>
+  <p>A diferença que importa para um arquiteto não é "a IA escreve código". É que o <strong>conhecimento arquitetural fica materializado em artefatos</strong> (steering, specs), a IA respeita esses artefatos como contrato, e o humano permanece no ponto de controle — o <em>human-in-the-loop</em> não é opcional, é estrutural.</p>
+  <div class="diagram">   ┌─────────────────────────────────────────────────────┐
+   │                                                       │
+   ▼                                                       │
+INTENT ──▶ REQUIREMENTS ──▶ DESIGN ──▶ TASKS ──▶ CODE ──▶ DEPLOY
+   │            │             │          │         │        │
+   └── 👤 ──────┴──── 👤 ─────┴─── 👤 ───┴── 👤 ───┴── 👤 ──┘
+        gate de aprovação humana em cada transição</div>
+  <div class="callout tip"><span class="ct">Insight para líderes</span>O ganho real do AI-DLC não é velocidade de digitação — é <strong>rastreabilidade e governança</strong>. Cada linha de código rastreia até uma task, que rastreia até um requisito aprovado. Auditoria e onboarding ficam triviais.</div>
+</section>
+
+<section id="m2">
+  <h2><span class="mnum">MÓDULO 02</span>Arquitetura de referência</h2>
+  <p>O sistema que construímos (assistente de planejamento floral para eventos) é uma arquitetura serverless RAG padrão, com três serviços do Amazon Bedrock. Toda a infra em <code>sa-east-1</code>.</p>
+  <div class="diagram">┌──────────┐   HTTPS + x-api-key    ┌──────────────┐      ┌────────────────────────┐
+│ Cliente  │ ─────────────────────▶ │ API Gateway  │ ───▶ │ Lambda (Python 3.12)    │
+│ (front)  │   + CORS restrito      │ (REST, key)  │      │ handler → planner        │
+└──────────┘                        └──────────────┘      └───────────┬────────────┘
+                                                                      │
+              ┌───────────────────────────────────────────────────────┼──────────────────┐
+              ▼                            ▼                            ▼
+     ┌──────────────────┐      ┌──────────────────────┐     ┌──────────────────┐
+     │ Bedrock Guardrail│      │ Bedrock Knowledge Base│     │ Bedrock (Converse)│
+     │ (pre + pos)      │      │ Retrieve (RAG)        │     │ InvokeModel        │
+     └──────────────────┘      └───────────┬──────────┘     └──────────────────┘
+                                           ▼
+                                ┌──────────────────────┐
+                                │ OpenSearch Serverless │  ← vector store gerenciado
+                                └──────────────────────┘
+   Observabilidade transversal: CloudWatch Logs (JSON) + Métricas (EMF) + X-Ray</div>
+  <h3>Fluxo de uma requisição</h3>
+  <ol>
+    <li><code>POST /planejar</code> com JSON do pedido (tipo de evento, mês, ambiente, paleta).</li>
+    <li>Lambda valida o payload e monta a <em>query</em> de recuperação.</li>
+    <li><strong>Retrieve</strong> na Knowledge Base (RAG) → trechos relevantes do documento curado.</li>
+    <li>Se não há contexto, responde "sem informação suficiente" (não alucina).</li>
+    <li><strong>InvokeModel</strong> (via API Converse) com contexto + guardrail aplicado.</li>
+    <li>Log estruturado + métricas + trace X-Ray.</li>
+  </ol>
+</section>
+
+<section id="m3">
+  <h2><span class="mnum">MÓDULO 03</span>Specs & steering — o contrato do projeto</h2>
+  <p>A base do AI-DLC no ecossistema Kiro são dois diretórios versionados: <code>.kiro/steering/</code> (regras permanentes) e <code>.kiro/specs/</code> (o ciclo de uma feature).</p>
+  <h3>Steering — regras que a IA sempre respeita</h3>
+  <ul>
+    <li><code>product.md</code> — o que o produto faz, regras de negócio, escopo/fora-de-escopo</li>
+    <li><code>tech.md</code> — stack, região, restrições de conta, padrões de qualidade</li>
+    <li><code>structure.md</code> — layout do repo, convenções de branch/PR/commit</li>
+    <li><code>governanca.md</code> — CI obrigatório, proteção de branch, gates</li>
+  </ul>
+  <h3>Specs — o ciclo de uma feature (3 fases + aprovação)</h3>
+  <p>Requisitos em formato <strong>EARS</strong> (Easy Approach to Requirements Syntax) — cláusulas testáveis:</p>
+  <pre><code><span class="cm"># requirements.md — critério de aceite EARS</span>
+QUANDO o usuário informar tipo de evento E mês/estação,
+O SISTEMA DEVE retornar flores de estação adequadas.
+
+QUANDO a KB não cobrir o assunto,
+O SISTEMA DEVE dizer que não tem informação suficiente,
+em vez de inventar.</code></pre>
+  <p>Cada fase termina num <em>checkbox de aprovação</em>. O design só começa quando os requisitos são aprovados; as tasks só quando o design é aprovado. As tasks viram os cards do Jira 1:1.</p>
+  <div class="callout tip"><span class="ct">Padrão</span>Requisitos em EARS não são burocracia — são <strong>asserts em linguagem natural</strong>. Cada cláusula "O SISTEMA DEVE..." vira um teste. Rastreabilidade requisito→design→task→código→teste fecha o loop.</div>
+</section>
+
+<section id="m4">
+  <h2><span class="mnum">MÓDULO 04</span>CI/CD: Jira + GitHub automatizado</h2>
+  <p>A ponte Jira↔GitHub foi feita com <strong>GitHub Actions + a API REST do Jira</strong> (stdlib pura, sem dependências), disparada por eventos de Pull Request.</p>
+  <h3>Sync de card no merge</h3>
+  <pre><code><span class="cm"># .github/scripts/jira_sync.py — trecho</span>
+<span class="kw">def</span> <span class="fn">find_issue_key</span>(text: str) -> str | <span class="nb">None</span>:
+    m = re.search(<span class="st">r"\bFLOR-\d+\b"</span>, text)  <span class="cm"># smart commit</span>
+    <span class="kw">return</span> m.group(<span class="nb">0</span>) <span class="kw">if</span> m <span class="kw">else</span> <span class="nb">None</span>
+
+<span class="kw">def</span> <span class="fn">transition_to</span>(key: str, name: str) -> <span class="nb">None</span>:
+    data = _call(<span class="st">"GET"</span>, <span class="st">f"/rest/api/3/issue/{key}/transitions"</span>)
+    match = <span class="nb">next</span>((t <span class="kw">for</span> t <span class="kw">in</span> data[<span class="st">"transitions"</span>]
+                  <span class="kw">if</span> t[<span class="st">"name"</span>].lower() == name.lower()), <span class="nb">None</span>)
+    _call(<span class="st">"POST"</span>, <span class="st">f"/rest/api/3/issue/{key}/transitions"</span>,
+          {<span class="st">"transition"</span>: {<span class="st">"id"</span>: match[<span class="st">"id"</span>]}})</code></pre>
+  <h3>Pipeline de qualidade (roda em todo PR)</h3>
+  <table>
+    <tr><th>Job</th><th>Ferramenta</th><th>Bloqueia merge?</th></tr>
+    <tr><td>Lint</td><td><code>ruff</code></td><td>Sim</td></tr>
+    <tr><td>Testes</td><td><code>pytest</code></td><td>Sim</td></tr>
+    <tr><td>Segredos</td><td><code>gitleaks</code></td><td>Sim</td></tr>
+    <tr><td>IaC</td><td><code>sam validate --lint</code></td><td>Sim</td></tr>
+  </table>
+  <div class="callout warn"><span class="ct">Gotcha real</span>O <code>gitleaks-action</code> falhou com <code>403 "Resource not accessible by integration"</code> — o <code>GITHUB_TOKEN</code> padrão não lê PRs sem permissão explícita. Solução: adicionar <code>permissions: {contents: read, pull-requests: read}</code> ao workflow.</div>
+</section>
+
+<section id="m5">
+  <h2><span class="mnum">MÓDULO 05</span>Bedrock: Knowledge Base + Foundation Model + Guardrails</h2>
+  <h3>Knowledge Base (RAG)</h3>
+  <p>Criar uma KB via API pura é frágil (7 recursos: role, 3 políticas OpenSearch, índice vetorial, KB, data source). O <strong>índice vetorial</strong> exige uma chamada HTTP assinada (SigV4) ao endpoint <code>aoss</code> — que o sandbox bloqueia. <strong>Solução prática: "Quick create vector store" no console</strong>, que cria coleção + índice automaticamente. Depois, o runtime só chama <code>Retrieve</code>:</p>
+  <pre><code><span class="cm"># src/bedrock_kb.py</span>
+resp = client.retrieve(
+    knowledgeBaseId=kb_id,
+    retrievalQuery={<span class="st">"text"</span>: consulta},
+    retrievalConfiguration={<span class="st">"vectorSearchConfiguration"</span>: {<span class="st">"numberOfResults"</span>: <span class="nb">5</span>}},
+)</code></pre>
+  <h3>Foundation Model — use a API Converse</h3>
+  <p>Decisão de arquitetura chave: em vez de <code>InvokeModel</code> com o payload específico de cada modelo (Claude ≠ Nova ≠ DeepSeek), usamos a <strong>API Converse</strong> — formato unificado. Trocar de modelo vira mudar uma string.</p>
+  <pre><code><span class="cm"># src/bedrock_fm.py — agnóstico de modelo</span>
+resp = client.converse(
+    modelId=model_id,                       <span class="cm"># deepseek.v3.2, claude, etc.</span>
+    system=[{<span class="st">"text"</span>: SYSTEM_PROMPT}],
+    messages=[{<span class="st">"role"</span>: <span class="st">"user"</span>, <span class="st">"content"</span>: [{<span class="st">"text"</span>: prompt}]}],
+    inferenceConfig={<span class="st">"maxTokens"</span>: <span class="nb">900</span>, <span class="st">"temperature"</span>: <span class="nb">0.3</span>},
+    guardrailConfig={<span class="st">"guardrailIdentifier"</span>: gid, <span class="st">"guardrailVersion"</span>: ver},
+)</code></pre>
+  <div class="callout tip"><span class="ct">Por que Converse</span>Desacopla o serviço do fornecedor do modelo. O mesmo código serve Claude, DeepSeek, Mistral e Nova. Em produção, isso é <strong>portabilidade de modelo</strong> sem refatoração.</div>
+  <h3>Guardrails</h3>
+  <p>Guardrail do Bedrock aplicado nas duas pontas: tópicos negados, filtros de conteúdo (HATE/SEXUAL/VIOLENCE) e PII. A calibração é a parte difícil (ver Módulo 08).</p>
+</section>
+
+<section id="m6">
+  <h2><span class="mnum">MÓDULO 06</span>Segurança & as travas da conta gerenciada</h2>
+  <p>A conta usada é uma "nova experiência AWS", com <strong>SCP/RCP gerenciadas e não editáveis</strong>. Isso impõe restrições que mudam decisões de arquitetura:</p>
+  <div class="callout gotcha"><span class="ct">Restrição estrutural</span><strong>POST anônimo é bloqueado.</strong> Endpoint público sem autenticação (API Gateway sem auth, ou Lambda Function URL <code>AuthType=NONE</code>) retorna <code>403</code> na borda — antes de chegar ao seu código. A RCP não é editável.</div>
+  <h3>Matriz de autenticação para front-end</h3>
+  <table>
+    <tr><th>Abordagem</th><th>Passa na trava?</th><th>Chave no browser?</th><th>Veredito</th></tr>
+    <tr><td>Anônimo + CORS</td><td><span class="pill no">Não (403)</span></td><td>—</td><td>Inviável nesta conta</td></tr>
+    <tr><td>API Key + CORS</td><td><span class="pill ok">Sim</span></td><td>Sim (exposta)</td><td>OK p/ baixo risco</td></tr>
+    <tr><td>IAM (SigV4)</td><td><span class="pill ok">Sim</span></td><td>Não</td><td>Chato p/ front puro</td></tr>
+    <tr><td>Proxy backend</td><td><span class="pill ok">Sim</span></td><td>Não</td><td>Padrão correto</td></tr>
+  </table>
+  <h3>CORS que não mascara erros</h3>
+  <p>Sutileza crítica: um <code>403</code> de API Key gerado pelo <strong>API Gateway</strong> não passa pela Lambda, então não tem header CORS — e o navegador reporta "erro de CORS" mascarando o 403 real. Solução: <code>GatewayResponse</code> com CORS nas respostas de erro.</p>
+  <pre><code><span class="cm"># template.yaml — erros do API GW respondem com CORS</span>
+GatewayResponse4xx:
+  Type: AWS::ApiGateway::GatewayResponse
+  Properties:
+    ResponseType: DEFAULT_4XX
+    ResponseParameters:
+      gatewayresponse.header.Access-Control-Allow-Origin: <span class="st">"'https://amenci.com.br'"</span></code></pre>
+  <div class="callout warn"><span class="ct">Regra de ouro CORS</span>O preflight <code>OPTIONS</code> NUNCA deve exigir API Key — o navegador não envia a chave no preflight. Marque <code>ApiKeyRequired: false</code> só no OPTIONS.</div>
+</section>
+
+<section id="m7">
+  <h2><span class="mnum">MÓDULO 07</span>Observabilidade sem custo de API</h2>
+  <p>Métricas via <strong>EMF (Embedded Metric Format)</strong>: a Lambda apenas imprime um JSON com bloco <code>_aws</code> no stdout, e o CloudWatch extrai as métricas automaticamente — sem chamada <code>PutMetricData</code> (sem custo de API, sem latência).</p>
+  <pre><code><span class="cm"># src/observability.py — métrica EMF</span>
+emf = {
+  <span class="st">"_aws"</span>: {
+    <span class="st">"Timestamp"</span>: <span class="nb">int</span>(time.time()*<span class="nb">1000</span>),
+    <span class="st">"CloudWatchMetrics"</span>: [{
+      <span class="st">"Namespace"</span>: <span class="st">"PlanejadorFloral"</span>,
+      <span class="st">"Dimensions"</span>: [[<span class="st">"service"</span>]],
+      <span class="st">"Metrics"</span>: [{<span class="st">"Name"</span>: <span class="st">"LatenciaMs"</span>}],
+    }],
+  },
+  <span class="st">"service"</span>: <span class="st">"planejador-floral"</span>,
+  <span class="st">"LatenciaMs"</span>: <span class="nb">812.0</span>,
+}
+<span class="fn">print</span>(json.dumps(emf))  <span class="cm"># CloudWatch faz o resto</span></code></pre>
+  <p>Complementado por logs JSON estruturados (um evento por linha) e <strong>X-Ray</strong> (<code>Tracing: Active</code> no template) para o trace distribuído das chamadas Bedrock.</p>
+</section>
+
+<section id="m8">
+  <h2><span class="mnum">MÓDULO 08</span>Armadilhas reais (o que só aparece construindo)</h2>
+  <p>Este é o módulo mais valioso para um arquiteto: os problemas que nenhum tutorial menciona.</p>
+  <h4>1. Deprecações de API silenciosas</h4>
+  <p>O endpoint <code>/rest/api/3/search</code> do Jira foi <strong>removido</strong> (HTTP 410 Gone) → migrar para <code>/rest/api/3/search/jql</code>. Actions em Node 20 deprecadas → <code>checkout@v5</code>, <code>setup-python@v6</code>.</p>
+  <h4>2. Localização quebra automação</h4>
+  <p>O board Jira em português tem transições <code>A fazer / Fazendo / Em análise / Feito</code>. O script tentava <code>"Done"</code> e falhava silenciosamente. Lição: <strong>não hardcode nomes de transição em inglês.</strong></p>
+  <h4>3. Model access gate (Anthropic)</h4>
+  <p>O Claude retornou <code>ResourceNotFoundException: Model use case details have not been submitted</code>. A conta precisa preencher um formulário de caso de uso — um gate de compliance externo. Contornado migrando para <strong>API Converse + modelo já liberado (DeepSeek)</strong>, sem mudar código.</p>
+  <h4>4. Guardrail: falso positivo por definição ampla</h4>
+  <p>Definir tópico negado por <em>exclusão</em> ("tudo que não é flores") fez o classificador bloquear o <strong>próprio domínio</strong> — um pedido legítimo de aniversário de 15 anos veio barrado. A correção passou por 3 versões:</p>
+  <table>
+    <tr><th>Versão</th><th>Definição</th><th>Resultado</th></tr>
+    <tr><td>v1</td><td>"tudo que não é flores" (exclusão)</td><td><span class="pill no">Bloqueia domínio legítimo</span></td></tr>
+    <tr><td>v2</td><td>genérica demais</td><td><span class="pill no">Não bloqueia o que devia</span></td></tr>
+    <tr><td>v3</td><td>categorias específicas (finanças, código, saúde) + exemplos</td><td><span class="pill ok">Calibrado</span></td></tr>
+  </table>
+  <div class="callout gotcha"><span class="ct">Lição de guardrail</span>Defina tópicos negados por <strong>categorias positivas e específicas</strong> com exemplos concretos, nunca por exclusão do domínio. E teste os dois lados: falso positivo (bloqueia o certo) e falso negativo (deixa passar o errado).</div>
+</section>
+
+<section id="m9">
+  <h2><span class="mnum">MÓDULO 09</span>Decisões de arquitetura & trade-offs</h2>
+  <table>
+    <tr><th>Decisão</th><th>Alternativa</th><th>Por quê</th></tr>
+    <tr><td>API Converse</td><td>InvokeModel por modelo</td><td>Portabilidade de modelo sem refatorar; troca por env var</td></tr>
+    <tr><td>Vector store gerenciado (Quick create)</td><td>OpenSearch manual via API</td><td>Índice vetorial exige SigV4 ao endpoint aoss; console cria tudo</td></tr>
+    <tr><td>Métricas EMF</td><td>PutMetricData</td><td>Zero custo de API, zero latência extra</td></tr>
+    <tr><td>API Key + CORS</td><td>Proxy backend</td><td>Site estático sem backend; risco baixo (recomendador de flores) + rate limit</td></tr>
+    <tr><td>IAM role por-recurso</td><td>role ampla</td><td>Permissão mínima: Retrieve só nesta KB, InvokeModel só neste modelo</td></tr>
+  </table>
+  <div class="callout tip"><span class="ct">Para produção sensível</span>A API Key no front é aceitável para conteúdo não-sensível de baixo tráfego. Para dados sensíveis, o padrão correto é um <strong>proxy no seu backend</strong> que guarda a credencial — a chave nunca chega ao navegador. CORS protege o navegador, mas não barra <code>curl</code> (Origin é forjável).</div>
+</section>
+
+<section id="m10">
+  <h2><span class="mnum">MÓDULO 10</span>Checklist do arquiteto</h2>
+  <h3>Antes de começar</h3>
+  <ul>
+    <li>Mapeie as <strong>restrições de conta</strong> (SCP/RCP) — elas mudam a arquitetura, não são detalhe</li>
+    <li>Steering primeiro: produto, tech, estrutura, governança versionados</li>
+    <li>Model access: confirme quais modelos estão <em>invocáveis</em> (não só listados)</li>
+  </ul>
+  <h3>No ciclo</h3>
+  <ul>
+    <li>Requisitos EARS → cada cláusula vira teste</li>
+    <li>Gate humano em cada transição de fase (não pule)</li>
+    <li>1 task = 1 card = 1 branch = 1 PR = CI verde + aprovação</li>
+    <li>API agnóstica de modelo (Converse) desde o dia 1</li>
+  </ul>
+  <h3>Segurança & operação</h3>
+  <ul>
+    <li>Permissão IAM mínima por recurso (não por serviço)</li>
+    <li>CORS nos <em>erros</em> também (GatewayResponse), senão o browser mascara 403</li>
+    <li>Guardrail: tópicos por categoria específica; teste falso positivo E negativo</li>
+    <li>Observabilidade barata (EMF + logs JSON + X-Ray) desde o início</li>
+    <li>FinOps: vector store (OpenSearch Serverless) cobra 24/7 — planeje teardown</li>
+  </ul>
+  <div class="footer">
+    <p>Estudo de caso: <strong>Planejador Floral</strong> — assistente de recomendação floral para eventos. Stack: AWS Lambda + API Gateway + Bedrock (Knowledge Base + Foundation Model via Converse + Guardrails) + SAM, governado por Kiro (steering/specs/tasks) com CI/CD Jira + GitHub. Região sa-east-1.</p>
+    <p style="margin-top:8px">Construído de ponta a ponta via ciclo AI-DLC com aprovação humana em cada fase. <a href="./index.html" style="color:var(--accent2)">← Voltar ao curso principal</a></p>
+  </div>
+</section>
+</main>
+</div>
+</body>
+</html>
