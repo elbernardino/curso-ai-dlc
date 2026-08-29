@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI-DLC na prática — do zero à API em produção na AWS</title>
+<style>
+  :root{
+    --bg:#0e1116; --card:#161b22; --card2:#1c2229; --line:#2a323c;
+    --ink:#e6edf3; --muted:#9198a1; --dim:#6e7681;
+    --em:#3fb950; --amber:#d29922; --blue:#58a6ff; --pink:#db61a2; --link:#79c0ff;
+    --code-bg:#0d1117;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.65;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:900px;margin:0 auto;padding:0 20px}
+  header.hero{border-bottom:1px solid var(--line);padding:60px 0 40px}
+  .kicker{color:var(--em);font-size:12px;letter-spacing:.2em;text-transform:uppercase;font-weight:700}
+  h1{font-size:42px;font-weight:800;letter-spacing:-.02em;line-height:1.08;margin:14px 0 12px}
+  .lede{color:var(--muted);font-size:17px;max-width:680px}
+  .meta{color:var(--dim);font-size:13px;margin-top:18px}
+  nav.toc{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:22px 26px;margin:36px 0}
+  nav.toc h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--amber);margin-bottom:14px}
+  nav.toc ol{list-style:none;counter-reset:m}
+  nav.toc li{counter-increment:m;padding:5px 0;color:var(--muted);font-size:14.5px}
+  nav.toc li::before{content:counter(m,decimal-leading-zero);color:var(--em);font-weight:700;margin-right:12px;font-variant-numeric:tabular-nums}
+  nav.toc a{color:var(--ink);text-decoration:none}
+  nav.toc a:hover{color:var(--link)}
+  section.module{padding:44px 0;border-bottom:1px solid var(--line)}
+  .mod-num{color:var(--em);font-size:13px;font-weight:700;letter-spacing:.1em}
+  h2.mod-title{font-size:28px;font-weight:750;letter-spacing:-.01em;margin:6px 0 18px}
+  h3{font-size:18px;font-weight:700;margin:26px 0 10px;color:var(--ink)}
+  p{margin-bottom:14px;color:#c9d1d9}
+  ul,ol.steps{margin:0 0 16px 22px}
+  li{margin-bottom:8px;color:#c9d1d9}
+  code{background:var(--code-bg);border:1px solid var(--line);border-radius:5px;padding:1.5px 6px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;color:var(--pink)}
+  pre{background:var(--code-bg);border:1px solid var(--line);border-radius:10px;padding:16px 18px;overflow-x:auto;margin:14px 0}
+  pre code{background:none;border:none;padding:0;color:#c9d1d9;font-size:13px;line-height:1.6}
+  .box{border-radius:10px;padding:16px 20px;margin:18px 0;font-size:14.5px}
+  .box.why{background:var(--card2);border-left:3px solid var(--blue)}
+  .box.gotcha{background:var(--card2);border-left:3px solid var(--amber)}
+  .box.win{background:var(--card2);border-left:3px solid var(--em)}
+  .box .t{font-weight:700;font-size:12px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px}
+  .box.why .t{color:var(--blue)} .box.gotcha .t{color:var(--amber)} .box.win .t{color:var(--em)}
+  .stack{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0}
+  .chip{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:5px 13px;font-size:12.5px;color:var(--muted)}
+  .chip b{color:var(--ink)}
+  table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px}
+  th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line)}
+  th{color:var(--amber);font-size:12px;text-transform:uppercase;letter-spacing:.08em}
+  td{color:#c9d1d9}
+  footer{padding:44px 0 70px;color:var(--dim);font-size:13px;text-align:center}
+  @media(max-width:600px){h1{font-size:30px}h2.mod-title{font-size:23px}body{font-size:15px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <div class="kicker">Estudo de caso · AI-DLC na AWS</div>
+  <h1>Do zero à API em produção com AI-DLC</h1>
+  <p class="lede">Como construir um chatbot de IA fundamentado em uma knowledge base e publicá-lo como uma API em produção na AWS, usando um ciclo de desenvolvimento assistido por IA. Todo o caminho real: da infraestrutura ao deploy, com Kiro, Amazon Bedrock, Jira, GitHub e CI/CD, incluindo os erros e como foram resolvidos.</p>
+  <div class="meta">Por Elber Bernardino · Accenture, business group de AWS</div>
+</header>
+
+<nav class="toc">
+  <h2>O que você vai percorrer</h2>
+  <ol>
+    <li><a href="#m0">O que é AI-DLC e por que testar</a></li>
+    <li><a href="#m1">Preparação: conta AWS, identidade e credenciais</a></li>
+    <li><a href="#m2">O ambiente: Kiro, steering e specs</a></li>
+    <li><a href="#m3">Jira e GitHub: o fluxo de trabalho</a></li>
+    <li><a href="#m4">CI/CD: a esteira que protege a main</a></li>
+    <li><a href="#m5">Amazon Bedrock: modelo, knowledge base e guardrail</a></li>
+    <li><a href="#m6">Da spec ao código: o ciclo card a card</a></li>
+    <li><a href="#m7">Deploy em produção com AWS SAM</a></li>
+    <li><a href="#m8">Publicar a API: a trava da conta e a solução</a></li>
+    <li><a href="#m9">Aprendizados para quem lidera</a></li>
+  </ol>
+</nav>
+
+<section class="module" id="m0">
+  <div class="mod-num">MÓDULO 01</div>
+  <h2 class="mod-title">O que é AI-DLC e por que testar</h2>
+  <p>No ciclo de desenvolvimento tradicional (SDLC), a pessoa escreve a especificação, o código, os testes e configura a esteira. A IA entra como autocomplete, ajudando linha a linha.</p>
+  <p>No AI-DLC (AI Development Life Cycle) a ordem muda. Você descreve a intenção em linguagem natural. A IA propõe a especificação, os testes e o código. Seu trabalho passa a ser revisar, corrigir o rumo e aprovar. O papel humano sobe de digitar para dirigir.</p>
+  <div class="box why"><div class="t">Por que este projeto existiu</div>O objetivo não era o produto. Era testar o ciclo AI-DLC de ponta a ponta em algo real, não um protótipo de slide: uma aplicação de IA em produção, com todos os componentes que um sistema sério precisa ter.</div>
+  <h3>O que foi construído</h3>
+  <p>Um <b>chatbot fundamentado em uma knowledge base</b>, publicado como uma <b>API</b> no final. O usuário envia uma pergunta, o sistema recupera o contexto relevante de uma base de conhecimento própria (RAG), gera a resposta com um modelo de linguagem, aplica um filtro de segurança e devolve uma resposta fundamentada, não inventada.</p>
+  <p>É o padrão de arquitetura mais comum em aplicações de IA corporativa hoje: um assistente que responde com base nos documentos e regras da própria empresa, exposto como um serviço que outros sistemas consomem.</p>
+  <div class="stack">
+    <span class="chip"><b>IDE:</b> Kiro</span>
+    <span class="chip"><b>IA:</b> Amazon Bedrock</span>
+    <span class="chip"><b>Compute:</b> Lambda + API Gateway</span>
+    <span class="chip"><b>Fluxo:</b> Jira + GitHub</span>
+    <span class="chip"><b>IaC:</b> AWS SAM</span>
+    <span class="chip"><b>Região:</b> sa-east-1</span>
+  </div>
+</section>
+
+<section class="module" id="m1">
+  <div class="mod-num">MÓDULO 02</div>
+  <h2 class="mod-title">Preparação: conta AWS, identidade e credenciais</h2>
+  <p>Antes de qualquer código, a base. A conta usada é da nova experiência AWS (login por provedor social, recursos organizados em projeto, região única definida pelo endereço de contato).</p>
+  <h3>Passos</h3>
+  <ol class="steps">
+    <li>Instalação da AWS CLI v2 oficial e do Agent Toolkit for AWS, que conecta um servidor MCP da AWS ao Kiro.</li>
+    <li>Login por <code>aws login</code> com passkey no navegador, sob um perfil dedicado.</li>
+    <li>Criação de um usuário IAM administrador para o dia a dia, com a conta root guardada só para emergências.</li>
+    <li>Um orçamento de custo (AWS Budgets) com alertas por e-mail, como rede de proteção contra surpresa na fatura.</li>
+  </ol>
+  <div class="box gotcha"><div class="t">Erro real e correção</div>O primeiro <code>aws login</code> deu <b>400 Bad Request</b>. A causa era a região: na nova experiência AWS, o login precisa apontar para a região onde o projeto foi criado. Ajustada a região, o login passou. Lição: a região não é preferência, é onde o projeto vive.</div>
+  <div class="box why"><div class="t">Princípio de segurança</div>Root só para emergência. Usuário IAM para o dia a dia. Credenciais temporárias (válidas 12h) em vez de chaves estáticas de longo prazo. Isso limita o estrago se algo vazar.</div>
+</section>
+
+<section class="module" id="m2">
+  <div class="mod-num">MÓDULO 03</div>
+  <h2 class="mod-title">O ambiente: Kiro, steering e specs</h2>
+  <p>O Kiro dirige o ciclo AI-DLC por dois artefatos versionados: <b>steering</b> (regras e contexto permanente do projeto) e <b>specs</b> (a especificação de cada funcionalidade, com requisitos, design e tarefas).</p>
+  <h3>Steering: o contexto que não muda</h3>
+  <p>Arquivos em <code>.kiro/steering/</code> guardam as decisões estáveis: as regras do projeto, a configuração do Jira, a política de governança. A IA lê isso em todo trabalho, então ela nunca esquece o contexto.</p>
+  <h3>Specs: a intenção que vira plano</h3>
+  <p>Cada funcionalidade nasce como uma spec. Você descreve a intenção, a IA propõe requisitos, desenho técnico e uma lista de tarefas. Você revisa e aprova antes de uma linha de código ser escrita.</p>
+  <div class="box win"><div class="t">Ganho</div>A especificação passa a existir como artefato versionado desde o primeiro dia, em vez de morar na cabeça de alguém. Quem entra no projeto depois lê a spec, não adivinha.</div>
+</section>
+
+<section class="module" id="m3">
+  <div class="mod-num">MÓDULO 04</div>
+  <h2 class="mod-title">Jira e GitHub: o fluxo de trabalho</h2>
+  <p>O trabalho foi quebrado em cards no Jira e cada card virou um Pull Request no GitHub. A integração entre os dois foi feita com GitHub Actions.</p>
+  <h3>Como o ciclo fecha sozinho</h3>
+  <ul>
+    <li><b>Seed de cards</b>: um workflow que criou os cards iniciais de uma vez, a partir de um script.</li>
+    <li><b>Sync Jira-GitHub</b>: a cada Pull Request aprovado e mesclado, o card correspondente se move sozinho para concluído e recebe um comentário automático com o link.</li>
+  </ul>
+  <div class="box gotcha"><div class="t">Detalhe que quebrou e foi corrigido</div>O board do Jira estava em português. O workflow tentava mover o card para "Done" e falhava, porque a coluna se chamava "Feito". Corrigido o nome da transição, o sync passou a funcionar. Lição: a automação precisa falar o idioma exato do board.</div>
+  <div class="box why"><div class="t">Segredos, do jeito certo</div>As credenciais do Jira (URL, e-mail, API token) nunca foram para o código. Ficaram como <b>secrets no GitHub</b>, lidas só em tempo de execução pela esteira. Nenhum segredo em texto puro no repositório.</div>
+</section>
+
+<section class="module" id="m4">
+  <div class="mod-num">MÓDULO 05</div>
+  <h2 class="mod-title">CI/CD: a esteira que protege a main</h2>
+  <p>Nenhuma mudança entrou na branch principal sem passar por revisão e por uma esteira automática. A cada Pull Request, o CI roda:</p>
+  <ul>
+    <li><b>ruff</b>: análise de estilo e qualidade do código Python.</li>
+    <li><b>pytest</b>: a suíte de testes automatizados (terminou com 28 testes).</li>
+    <li><b>gitleaks</b>: varredura de segredos vazados no código.</li>
+    <li><b>sam validate</b>: validação do template de infraestrutura.</li>
+  </ul>
+  <p>Só entra quem está verde nas quatro verificações.</p>
+  <div class="box gotcha"><div class="t">Limite de plataforma</div>A proteção nativa de branch (impedir push direto na main pelo GitHub) exige plano pago em repositório privado. A solução foi "proteção por convenção": governança documentada, o próprio ambiente já bloqueia push direto na main, e o CI roda em todo PR. Nem toda trava precisa ser um recurso pago, algumas são disciplina de processo.</div>
+</section>
+
+<section class="module" id="m5">
+  <div class="mod-num">MÓDULO 06</div>
+  <h2 class="mod-title">Amazon Bedrock: modelo, knowledge base e guardrail</h2>
+  <p>A camada de IA do chatbot usou três recursos distintos do Bedrock, cada um com um papel claro.</p>
+  <table>
+    <tr><th>Recurso</th><th>Papel</th></tr>
+    <tr><td>Foundation Model</td><td>Gera a resposta do chatbot. Via API Converse, agnóstica de modelo.</td></tr>
+    <tr><td>Knowledge Base (RAG)</td><td>Fundamenta a resposta nos dados reais da base, para o modelo não inventar.</td></tr>
+    <tr><td>Guardrail</td><td>Impede o chatbot de responder fora do escopo (finanças, código, saúde).</td></tr>
+  </table>
+  <div class="box why"><div class="t">Por que RAG importa num chatbot</div>Um modelo de linguagem sozinho responde com o que "lembra" do treino, e às vezes inventa. Com uma knowledge base, o chatbot primeiro busca o trecho relevante na base própria e só então responde, citando a fonte. É a diferença entre um chatbot que chuta e um que responde com base nos seus documentos.</div>
+  <div class="box gotcha"><div class="t">O guardrail levou três versões</div>A v1 bloqueava tudo, porque definia o tópico proibido por exclusão. A v2 ficou permissiva demais. A v3 acertou, calibrada com categorias específicas e sem falso positivo. Calibrar comportamento de IA é julgamento humano, e a IA não substitui isso.</div>
+  <div class="box gotcha"><div class="t">Escolha do modelo</div>O Claude exigia preencher um formulário de caso de uso da Anthropic. Para não travar, a integração usou a API Converse (agnóstica de modelo) com um modelo liberado sem formulário. Trocar de modelo passou a ser mudar uma variável, não reescrever a integração.</div>
+  <div class="box why"><div class="t">Atenção a custo</div>A knowledge base usa OpenSearch Serverless, que cobra por capacidade 24 horas por dia enquanto existir, independente de uso. É o maior custo da arquitetura. Lambda e API só cobram por uso. Lição: em IA, o armazenamento vetorial custa mais que a inferência no dia a dia.</div>
+</section>
+
+<section class="module" id="m6">
+  <div class="mod-num">MÓDULO 07</div>
+  <h2 class="mod-title">Da spec ao código: o ciclo card a card</h2>
+  <p>Com a base pronta, o desenvolvimento virou um ritmo repetido, card a card. Os cards seguiram a construção natural de um chatbot com RAG: ingerir a base de conhecimento, recuperar o contexto, chamar o modelo, aplicar o guardrail, expor como API.</p>
+  <ol class="steps">
+    <li>Pegar o card no Jira.</li>
+    <li>A IA propõe o código e os testes a partir da spec.</li>
+    <li>Revisar, ajustar, abrir o Pull Request.</li>
+    <li>O CI roda as quatro verificações.</li>
+    <li>Aprovar e mesclar. O card se move para concluído sozinho.</li>
+  </ol>
+  <p>Foram <b>15 Pull Requests</b> até a aplicação ficar pronta. Cada um passou pela mesma esteira.</p>
+  <div class="box win"><div class="t">A validação deixou de competir com o prazo</div>Os testes vieram junto com o código, a partir da mesma spec. Terminamos com 28 testes, não por disciplina extra, mas porque gerar o teste custou o mesmo que gerar a função. No modelo tradicional, o teste é o primeiro item cortado quando o prazo aperta. Aqui não.</div>
+</section>
+
+<section class="module" id="m7">
+  <div class="mod-num">MÓDULO 08</div>
+  <h2 class="mod-title">Deploy em produção com AWS SAM</h2>
+  <p>A infraestrutura foi definida como código com AWS SAM (um template versionado descreve a Lambda, a API e as permissões). O deploy em produção foi feito por uma pessoa, de forma deliberada.</p>
+  <pre><code>sam validate      # a esteira valida o template em todo PR
+sam build         # empacota a função
+sam deploy        # publica a stack em produção</code></pre>
+  <div class="box why"><div class="t">Decisão consciente</div>Automatizar a geração de código é uma coisa. Colocar no ar é uma decisão que se mantém sob controle humano. Gerar rápido não significa publicar sem revisar.</div>
+  <p>Resultado: a Lambda e a API do chatbot rodando em produção, testadas ponta a ponta. Recebe a pergunta, recupera contexto da knowledge base, chama o foundation model, aplica o guardrail e devolve uma resposta fundamentada.</p>
+</section>
+
+<section class="module" id="m8">
+  <div class="mod-num">MÓDULO 09</div>
+  <h2 class="mod-title">Publicar a API: a trava da conta e a solução</h2>
+  <p>Aqui apareceu a restrição mais instrutiva do projeto. A ideia inicial era expor a API do chatbot publicamente, protegida só por CORS restrito ao domínio que a consome.</p>
+  <div class="box gotcha"><div class="t">O POST anônimo retornou 403</div>A conta da nova experiência AWS tem políticas de segurança gerenciadas (SCP/RCP) que <b>bloqueiam endpoints públicos anônimos por design</b>, e essas políticas não são editáveis. O CORS puro não resolve, porque CORS é uma proteção de navegador: ele controla quais sites podem chamar, mas o POST em si chega sem autenticação e é barrado antes disso.</div>
+  <h3>A solução que funcionou</h3>
+  <ul>
+    <li><b>API Key</b> (header <code>x-api-key</code>): passa pela trava porque a requisição deixa de ser anônima.</li>
+    <li><b>CORS restrito</b> ao domínio que consome a API, ecoando apenas a origem permitida.</li>
+    <li><b>Usage Plan</b>: limite de taxa e cota mensal, como proteção contra abuso.</li>
+    <li>O preflight <code>OPTIONS</code> fica sem exigir a chave, para o navegador conseguir validar o CORS.</li>
+  </ul>
+  <div class="box why"><div class="t">O trade-off, com honestidade</div>Quando o cliente da API é um front-end estático (sem backend), a chave precisa viver no navegador para funcionar. O que a protege não é o segredo em si, mas o CORS restrito e o rate limit. O padrão mais seguro (a chave num proxy de backend) vale quando existe um servidor entre o usuário e a API.</div>
+</section>
+
+<section class="module" id="m9" style="border-bottom:none">
+  <div class="mod-num">MÓDULO 10</div>
+  <h2 class="mod-title">Aprendizados para quem lidera</h2>
+  <p>O AI-DLC não é sobre programar mais rápido. É sobre mudar onde o esforço humano é gasto.</p>
+  <h3>Onde o tempo caiu</h3>
+  <ul>
+    <li><b>Partida:</b> spec e estrutura saem de uma descrição de intenção, não de dias de setup.</li>
+    <li><b>Validação:</b> testes gerados junto com o código, então testar deixa de ser o item cortado sob pressão.</li>
+    <li><b>Integração:</b> CI/CD e o vínculo Jira-GitHub como parte do desenho, com rastro automático entre decisão e código.</li>
+  </ul>
+  <h3>Onde o humano continua no comando</h3>
+  <ul>
+    <li>Calibrar o comportamento da IA (o guardrail em três versões).</li>
+    <li>Decisões de segurança e arquitetura (a trava da conta, a estratégia de exposição da API).</li>
+    <li>A decisão de colocar em produção.</li>
+  </ul>
+  <div class="box win"><div class="t">O resumo</div>Menos tarefa mecânica, mais julgamento. A velocidade de entrega sobe, especialmente na partida. E a qualidade da validação sobe junto. Confirmado em uma aplicação real, um chatbot com knowledge base publicado como API, do intent ao deploy, em poucas semanas de trabalho de fim de tarde.</div>
+</section>
+
+<footer>
+  Estudo de caso AI-DLC · chatbot com knowledge base + API na AWS · por Elber Bernardino<br>
+  Todos os números e decisões descritos são de um projeto real, incluindo os erros e como foram resolvidos.
+</footer>
+
+</div>
+</body>
+</html>
