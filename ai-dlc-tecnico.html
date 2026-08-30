@@ -74,15 +74,16 @@
   <a href="./index.html" class="back">← Voltar ao curso principal</a>
   <a href="#intro" class="mod"><span class="n">00</span>Introdução</a>
   <a href="#m1" class="mod"><span class="n">01</span>O que é AI-DLC</a>
-  <a href="#m2" class="mod"><span class="n">02</span>Arquitetura de referência</a>
-  <a href="#m3" class="mod"><span class="n">03</span>Specs & steering</a>
-  <a href="#m4" class="mod"><span class="n">04</span>CI/CD Jira + GitHub</a>
-  <a href="#m5" class="mod"><span class="n">05</span>Bedrock: KB + FM + Guardrails</a>
-  <a href="#m6" class="mod"><span class="n">06</span>Segurança & travas da conta</a>
-  <a href="#m7" class="mod"><span class="n">07</span>Observabilidade</a>
-  <a href="#m8" class="mod"><span class="n">08</span>Armadilhas reais</a>
-  <a href="#m9" class="mod"><span class="n">09</span>Trade-offs de arquitetura</a>
-  <a href="#m10" class="mod"><span class="n">10</span>Checklist do arquiteto</a>
+  <a href="#mob" class="mod"><span class="n">02</span>Mob e cadência de bolt</a>
+  <a href="#m2" class="mod"><span class="n">03</span>Arquitetura de referência</a>
+  <a href="#m3" class="mod"><span class="n">04</span>Specs & steering</a>
+  <a href="#m4" class="mod"><span class="n">05</span>CI/CD, evals e Jira</a>
+  <a href="#m5" class="mod"><span class="n">06</span>Bedrock: KB + FM + Guardrails</a>
+  <a href="#m6" class="mod"><span class="n">07</span>Segurança & travas da conta</a>
+  <a href="#m7" class="mod"><span class="n">08</span>Observabilidade</a>
+  <a href="#m8" class="mod"><span class="n">09</span>Armadilhas reais</a>
+  <a href="#m9" class="mod"><span class="n">10</span>Trade-offs de arquitetura</a>
+  <a href="#m10" class="mod"><span class="n">11</span>Checklist do arquiteto</a>
 </nav>
 
 <main>
@@ -97,8 +98,22 @@
 
 <section id="m1">
   <h2><span class="mnum">MÓDULO 01</span>O que é AI-DLC (e por que arquiteto deve se importar)</h2>
-  <p><strong>AI-DLC (AI-Driven Development Lifecycle)</strong> é um ciclo de desenvolvimento em que a IA participa de cada fase, mas cada transição de fase passa por um <em>gate de aprovação humana</em>. Em vez de "prompt → código", o fluxo é <code>intenção → requisitos → design → tasks → código → deploy</code>, e cada artefato é revisável e versionado.</p>
+  <p><strong>AI-DLC (AI-Driven Development Lifecycle)</strong> é a metodologia publicada pela AWS em julho de 2025, com os workflows abertos como <code>awslabs/aidlc-workflows</code> em novembro. A IA rascunha planos, código, testes e configuração de infraestrutura; humanos validam cada passo antes da execução prosseguir. O papel do dev migra de escrever código para dirigir e validar o que foi gerado.</p>
+  <p><strong>A sequência de fases não muda.</strong> Requisitos, design, código e deploy continuam na mesma ordem do SDLC. O que muda é quem rascunha cada artefato, quão rápido o ciclo gira e onde a atenção humana é gasta.</p>
   <p>A diferença que importa para um arquiteto não é "a IA escreve código". É que o <strong>conhecimento arquitetural fica materializado em artefatos</strong> (steering, specs), a IA respeita esses artefatos como contrato, e o humano permanece no ponto de controle — o <em>human-in-the-loop</em> não é opcional, é estrutural.</p>
+  <h3>Três fases, com Operations realimentando o começo</h3>
+  <div class="diagram">                        ┌──────────────── realimenta ─────────────────┐
+                        │                                             │
+                        ▼                                             │
+   ┌────────────────────────────┐  ┌──────────────────────┐  ┌────────┴───────────┐
+   │ INCEPTION                  │  │ CONSTRUCTION         │  │ OPERATIONS         │
+   │ intenção → requisitos      │─▶│ arquitetura, domínio │─▶│ deploy, telemetria │
+   │ → unidades de trabalho     │  │ código, testes       │  │ incidentes, evals  │
+   │                            │  │                      │  │                    │
+   │ 👥 Mob Elaboration         │  │ 👥 Mob Construction  │  │ 👤 operação        │
+   └────────────────────────────┘  └──────────────────────┘  └────────────────────┘
+        cadência: BOLT — ciclo de horas ou dias, não de semanas</div>
+  <p>O recorte que o Kiro implementa bem, e que este curso documenta em profundidade, é o ciclo de specs dentro da <strong>Construction</strong>:</p>
   <div class="diagram">   ┌─────────────────────────────────────────────────────┐
    │                                                       │
    ▼                                                       │
@@ -106,11 +121,84 @@ INTENT ──▶ REQUIREMENTS ──▶ DESIGN ──▶ TASKS ──▶ CODE �
    │            │             │          │         │        │
    └── 👤 ──────┴──── 👤 ─────┴─── 👤 ───┴── 👤 ───┴── 👤 ──┘
         gate de aprovação humana em cada transição</div>
-  <div class="callout tip"><span class="ct">Insight para líderes</span>O ganho real do AI-DLC não é velocidade de digitação — é <strong>rastreabilidade e governança</strong>. Cada linha de código rastreia até uma task, que rastreia até um requisito aprovado. Auditoria e onboarding ficam triviais.</div>
+  <div class="callout tip"><span class="ct">Insight para líderes</span>O ganho real do AI-DLC não é velocidade de digitação — é <strong>rastreabilidade e governança</strong>. Cada linha de código rastreia até uma task, que rastreia até um requisito aprovado. A trilha de auditoria faz parte da definição do método, não é subproduto.</div>
+  <div class="callout warn"><span class="ct">A trilha só existe se você a fechar</span>Rastrear task → requisito é a parte fácil. Para o artefato ser auditável de verdade falta registrar <strong>qual modelo, qual versão e qual revisão da spec</strong> geraram aquele código. Trocar de modelo por variável de ambiente (módulo 05) é portabilidade, e ao mesmo tempo um buraco de auditoria: fixe o <code>modelId</code> com versão e registre-o no PR.</div>
+  <h3>Vocabulário: o que muda em relação ao SDLC</h3>
+  <table>
+    <tr><th>SDLC</th><th>AI-DLC</th><th>Racional</th></tr>
+    <tr><td>Sprint (semanas)</td><td><strong>Bolt</strong> (horas ou dias)</td><td>O gargalo saiu da coordenação humana e foi para a velocidade de validação</td></tr>
+    <tr><td>Épico / história</td><td><strong>Unidade de trabalho</strong></td><td>Fatia validável numa sessão só</td></tr>
+    <tr><td>Autoria solo + review assíncrono</td><td><strong>Mob Elaboration / Mob Construction</strong></td><td>Revisão assíncrona vira fila quando o volume gerado sobe</td></tr>
+    <tr><td>Cerimônia fixa para tudo</td><td><strong>Rigor adaptativo</strong></td><td>Bug simples pula planejamento; feature complexa recebe o ciclo inteiro</td></tr>
+  </table>
+  <div class="callout gotcha"><span class="ct">Não confunda a ferramenta com o método</span>Spec-driven development com gate de aprovação já existia antes do AI-DLC, e é o que o Kiro entrega. O que distingue a metodologia são as três peças acima: <strong>cadência de bolt, validação coletiva e rigor adaptativo</strong>. O módulo seguinte trata delas; sem isso, o que resta é um assistente melhor, não uma metodologia diferente.</div>
+</section>
+
+<section id="mob">
+  <h2><span class="mnum">MÓDULO 02</span>Mob Elaboration e Mob Construction</h2>
+  <p>Esta é a peça central do AI-DLC e a que mais se perde quando se olha só para a ferramenta. O método <strong>não</strong> pede que o agente proponha e alguém aprove depois, sozinho, num Pull Request assíncrono. Pede que as pessoas certas estejam <strong>juntas e ao mesmo tempo</strong> enquanto o agente propõe.</p>
+
+  <h3>Por que síncrono, e por que isso não é preferência de gestão</h3>
+  <p>A premissa do método é que o gargalo mudou de lugar. Rascunhar ficou barato; <strong>validar</strong> virou o caro. Se o gargalo é validar, revisão assíncrona é a pior arquitetura possível: cada rodada de dúvida custa horas de espera, o contexto se perde entre elas e a fila cresce mais rápido que a vazão. Com o time na mesma sessão, uma ambiguidade que apareceria na semana seis morre em minutos.</p>
+  <div class="diagram">  MOB ELABORATION (Inception)              MOB CONSTRUCTION (Construction)
+  ────────────────────────────             ──────────────────────────────────
+  agente interroga a intenção              agente propõe arquitetura e plano
+          │                                        │
+          ▼                                        ▼
+  👥 time valida AS PERGUNTAS               👥 time verifica O PLANO
+     (produto, QA, negócio, dev)               (dev sênior, arquiteto)
+          │                                        │
+          ▼                                        ▼
+  agente deriva requisitos +               agente gera código + testes
+  unidades de trabalho                             │
+          │                                        ▼
+          ▼                                 👥 time revisa o gerado
+  👥 time aprova (versionado)                      │
+          │                                        └──▶ próximo laço (minutos)
+          └──────────▶ vira o backlog do bolt</div>
+
+  <h3>Mob Elaboration — na Inception</h3>
+  <p>O time examina em conjunto as <strong>perguntas</strong> que o agente levanta sobre a intenção de negócio, antes das respostas dele. Só então valida os requisitos e as unidades de trabalho derivadas.</p>
+  <ul>
+    <li><strong>Quem está na sala:</strong> time multifuncional. Produto, análise de negócio e QA junto com devs. A IA prospera com especificidade, e cada área carrega uma fatia do contexto que falta.</li>
+    <li><strong>O artefato de saída:</strong> requisitos e unidades de trabalho aprovados de forma versionada, não consenso verbal.</li>
+    <li><strong>Sinal de que funcionou:</strong> alguém discordou de alguma coisa. Se a sessão inteira foi "sim, ok", ninguém leu.</li>
+  </ul>
+  <div class="callout tip"><span class="ct">Elaboração dirigida por perguntas</span>O passo que quase todo material omite: antes de propor qualquer coisa, o agente <strong>interroga</strong> a intenção vaga. Um agente que devolve dez perguntas incômodas sobre o pedido está fazendo o trabalho certo — é ali que aparece, no dia um, a ambiguidade que normalmente vira retrabalho na semana seis.</div>
+
+  <h3>Mob Construction — na Construction</h3>
+  <p>Mesmo formato aplicado ao plano técnico, num laço apertado: o agente propõe, humanos verificam, o agente gera, humanos revisam, repete. A sessão termina quando a unidade de trabalho está integrada, não quando o relógio bate.</p>
+
+  <h3>A cadência: bolt no lugar do sprint</h3>
+  <p>Um <strong>bolt</strong> é o ciclo de trabalho do AI-DLC: horas ou dias, em que o time valida um plano proposto pelo agente, o agente executa e o resultado é revisado. Se a unidade de trabalho não cabe numa sessão, ela está grande demais e precisa ser fatiada antes de começar.</p>
+  <table>
+    <tr><th>Prática</th><th>SDLC</th><th>AI-DLC</th></tr>
+    <tr><td>Ciclo</td><td>Sprint de 1 a 4 semanas</td><td>Bolt de horas ou dias</td></tr>
+    <tr><td>Unidade de escopo</td><td>Épico, história</td><td>Unidade de trabalho</td></tr>
+    <tr><td>Momento da validação</td><td>Code review assíncrono, dias depois</td><td>Ao vivo, no mesmo laço da geração</td></tr>
+    <tr><td>Quem valida</td><td>Um revisor por PR</td><td>O mob, com as áreas necessárias</td></tr>
+  </table>
+
+  <h3>Custo real: atenção sênior</h3>
+  <div class="callout warn"><span class="ct">O que não aparece no keynote</span>Mob exige as pessoas mais experientes, juntas, síncronas, por horas. O método gasta menos com digitação e <strong>mais com atenção sênior</strong>. Um líder que lê "menos tarefa mecânica, mais julgamento" e não lê a segunda metade dimensiona o time errado. Se você tem um arquiteto para cinco squads, o gargalo do AI-DLC não é a IA, é ele.</div>
+
+  <h3>Anti-padrões</h3>
+  <ul>
+    <li><strong>Mob de fachada:</strong> rodar a sessão e deixar a validação real para o PR assíncrono da semana seguinte. Paga-se o custo dos dois modelos sem o benefício de nenhum.</li>
+    <li><strong>Mob só de devs:</strong> a elaboração perde exatamente o contexto que ela existe para capturar.</li>
+    <li><strong>Bolt com escopo de sprint:</strong> se a sessão não fecha em horas ou dias, a unidade de trabalho foi mal fatiada. Fatie antes, não no meio.</li>
+    <li><strong>Aprovar sem discordar:</strong> gate que nunca reprova nada não é gate, é carimbo.</li>
+  </ul>
+
+  <h3>Rigor adaptativo</h3>
+  <p>O workflow analisa se a base é nova ou existente, avalia complexidade e decide quais estágios valem a pena. Correção simples de bug pula planejamento e vai direto para geração de código; feature complexa recebe análise de requisitos, design arquitetural e teste detalhado.</p>
+  <div class="callout gotcha"><span class="ct">Correção de uma regra da primeira versão deste curso</span>"Gate humano em cada transição de fase, não pule" contradiz um valor fundamental do método. Workflow tamanho único, que força todo projeto pela mesma sequência rígida, é um dos três problemas que a metodologia se propõe a resolver. A formulação correta: o gate é obrigatório em cada transição <strong>que o trabalho exigir</strong>, e escolher quais estágios se aplicam é ela própria uma decisão humana, tomada no início.</div>
+
+  <div class="callout warn"><span class="ct">O que este estudo de caso não exercita</span>Tudo que vem a seguir foi construído por uma pessoa só. O material documenta a Construction com profundidade real, incluindo os erros, e <strong>não</strong> exercita Inception coletiva, cadência de bolt nem rigor adaptativo. Vale ler os módulos seguintes com essa delimitação em mente.</div>
 </section>
 
 <section id="m2">
-  <h2><span class="mnum">MÓDULO 02</span>Arquitetura de referência</h2>
+  <h2><span class="mnum">MÓDULO 03</span>Arquitetura de referência</h2>
   <p>O sistema é um <strong>chatbot RAG</strong>: recebe uma pergunta, recupera contexto de uma base de conhecimento própria e gera a resposta com um LLM. Arquitetura serverless com três serviços do Amazon Bedrock. Toda a infra em região única.</p>
   <div class="diagram">┌──────────┐   HTTPS + x-api-key    ┌──────────────┐      ┌────────────────────────┐
 │ Cliente  │ ─────────────────────▶ │ API Gateway  │ ───▶ │ Lambda (Python 3.12)    │
@@ -121,26 +209,28 @@ INTENT ──▶ REQUIREMENTS ──▶ DESIGN ──▶ TASKS ──▶ CODE �
               ▼                            ▼                            ▼
      ┌──────────────────┐      ┌──────────────────────┐     ┌──────────────────┐
      │ Bedrock Guardrail│      │ Bedrock Knowledge Base│     │ Bedrock (Converse)│
-     │ (pre + pos)      │      │ Retrieve (RAG)        │     │ InvokeModel        │
+     │ ApplyGuardrail   │      │ Retrieve (RAG)        │     │ + guardrailConfig  │
+     │ (pré-filtro)     │      │                       │     │ (entrada e saída)  │
      └──────────────────┘      └───────────┬──────────┘     └──────────────────┘
                                            ▼
                                 ┌──────────────────────┐
                                 │ OpenSearch Serverless │  ← vector store gerenciado
                                 └──────────────────────┘
    Observabilidade transversal: CloudWatch Logs (JSON) + Métricas (EMF) + X-Ray</div>
+  <div class="callout warn"><span class="ct">Pré-filtro e guardrail da chamada não são a mesma coisa</span>Passar <code>guardrailConfig</code> no <code>converse</code> aplica o guardrail à entrada e à saída <strong>daquela chamada</strong>. Se você quer barrar a pergunta <em>antes</em> de gastar um <code>Retrieve</code> e um <code>converse</code>, precisa de uma chamada explícita a <code>ApplyGuardrail</code> na borda. São decisões diferentes, com custo diferente: o pré-filtro economiza a rodada inteira em pergunta fora de escopo.</div>
   <h3>Fluxo de uma requisição</h3>
   <ol>
     <li><code>POST /chat</code> com a pergunta do usuário (JSON).</li>
     <li>Lambda valida o payload e monta a <em>query</em> de recuperação.</li>
     <li><strong>Retrieve</strong> na Knowledge Base (RAG) → trechos relevantes dos documentos indexados.</li>
-    <li>Se não há contexto, responde "sem informação suficiente" (não alucina).</li>
+    <li>Se não há contexto, o <em>system prompt</em> instrui a responder "sem informação suficiente". Note que isso é instrução, não garantia arquitetural: só um conjunto de avaliação mostra com que frequência o modelo obedece.</li>
     <li><strong>InvokeModel</strong> (via API Converse) com contexto + guardrail aplicado.</li>
     <li>Log estruturado + métricas + trace X-Ray.</li>
   </ol>
 </section>
 
 <section id="m3">
-  <h2><span class="mnum">MÓDULO 03</span>Specs & steering — o contrato do projeto</h2>
+  <h2><span class="mnum">MÓDULO 04</span>Specs & steering — o contrato do projeto</h2>
   <p>A base do AI-DLC no ecossistema Kiro são dois diretórios versionados: <code>.kiro/steering/</code> (regras permanentes) e <code>.kiro/specs/</code> (o ciclo de uma feature).</p>
   <h3>Steering — regras que a IA sempre respeita</h3>
   <ul>
@@ -159,22 +249,28 @@ QUANDO a base de conhecimento não cobrir o assunto,
 O SISTEMA DEVE dizer que não tem informação suficiente,
 em vez de inventar.</code></pre>
   <p>Cada fase termina num <em>checkbox de aprovação</em>. O design só começa quando os requisitos são aprovados; as tasks só quando o design é aprovado. As tasks viram os cards do Jira 1:1.</p>
-  <div class="callout tip"><span class="ct">Padrão</span>Requisitos em EARS não são burocracia — são <strong>asserts em linguagem natural</strong>. Cada cláusula "O SISTEMA DEVE..." vira um teste. Rastreabilidade requisito→design→task→código→teste fecha o loop.</div>
+  <div class="callout warn"><span class="ct">A spec é a fonte da verdade, e isso tem consequência com mais de um dev</span>O agente <strong>regenera código a partir da spec</strong>. Se dois devs editam specs em branches paralelos, o conflito não é textual, é semântico: o Git faz merge limpo de duas specs que se contradizem e o CI fica verde enquanto dois agentes constroem coisas incompatíveis. O anteparo é separar <strong>PR de spec</strong> de <strong>PR de implementação</strong>, e mesclar specs, contratos e schemas no main antes de qualquer branch de código nascer. Steering merece o mesmo tratamento: alterar <code>.kiro/steering/</code> muda o comportamento de todos os agentes ao mesmo tempo, então vale CODEOWNERS e revisão dupla, não o gate de um ajuste de CSS.</div>
+  <div class="callout tip"><span class="ct">Padrão</span>Requisitos em EARS não são burocracia — são <strong>asserts em linguagem natural</strong>. Cada cláusula "O SISTEMA DEVE..." deve virar um teste, e rastreabilidade requisito→design→task→código→teste fecha o loop.</div>
+  <div class="callout warn"><span class="ct">O loop só fecha se houver mecanismo</span>"Cada cláusula vira um teste" não acontece sozinho. Sem um identificador de requisito citado no nome ou no <em>docstring</em> do teste, a rastreabilidade é aspiração, não propriedade verificável. Convenção mínima: <code>REQ-04</code> na cláusula EARS e <code>test_req_04_sem_contexto_responde_nao_sei</code> no teste, com um job de CI reclamando de requisito sem teste correspondente.</div>
 </section>
 
 <section id="m4">
-  <h2><span class="mnum">MÓDULO 04</span>CI/CD: Jira + GitHub automatizado</h2>
+  <h2><span class="mnum">MÓDULO 05</span>CI/CD: qualidade, evals e sync com o Jira</h2>
   <p>A ponte Jira↔GitHub foi feita com <strong>GitHub Actions + a API REST do Jira</strong> (stdlib pura, sem dependências), disparada por eventos de Pull Request.</p>
   <h3>Sync de card no merge</h3>
   <pre><code><span class="cm"># .github/scripts/jira_sync.py — trecho</span>
 <span class="kw">def</span> <span class="fn">find_issue_key</span>(text: str) -> str | <span class="nb">None</span>:
-    m = re.search(<span class="st">r"\b[A-Z]+-\d+\b"</span>, text)  <span class="cm"># smart commit (ex.: PROJ-12)</span>
+    <span class="cm"># ancore no prefixo real do projeto: r"\bPROJ-\d+\b" sem isso,</span>
+    <span class="cm"># "UTF-8", "SHA-256" e "HTTP-2" viram chave de card válida</span>
+    m = re.search(<span class="st">rf"\b{PROJECT_KEY}-\d+\b"</span>, text)
     <span class="kw">return</span> m.group(<span class="nb">0</span>) <span class="kw">if</span> m <span class="kw">else</span> <span class="nb">None</span>
 
 <span class="kw">def</span> <span class="fn">transition_to</span>(key: str, name: str) -> <span class="nb">None</span>:
     data = _call(<span class="st">"GET"</span>, <span class="st">f"/rest/api/3/issue/{key}/transitions"</span>)
+    <span class="cm"># resolva por categoria de status de destino, não por nome:</span>
+    <span class="cm"># nome quebra com renomeação e com idioma do board</span>
     match = <span class="nb">next</span>((t <span class="kw">for</span> t <span class="kw">in</span> data[<span class="st">"transitions"</span>]
-                  <span class="kw">if</span> t[<span class="st">"name"</span>].lower() == name.lower()), <span class="nb">None</span>)
+                  <span class="kw">if</span> t[<span class="st">"to"</span>][<span class="st">"statusCategory"</span>][<span class="st">"key"</span>] == <span class="st">"done"</span>), <span class="nb">None</span>)
     _call(<span class="st">"POST"</span>, <span class="st">f"/rest/api/3/issue/{key}/transitions"</span>,
           {<span class="st">"transition"</span>: {<span class="st">"id"</span>: match[<span class="st">"id"</span>]}})</code></pre>
   <h3>Pipeline de qualidade (roda em todo PR)</h3>
@@ -184,12 +280,29 @@ em vez de inventar.</code></pre>
     <tr><td>Testes</td><td><code>pytest</code></td><td>Sim</td></tr>
     <tr><td>Segredos</td><td><code>gitleaks</code></td><td>Sim</td></tr>
     <tr><td>IaC</td><td><code>sam validate --lint</code></td><td>Sim</td></tr>
+    <tr><td>Qualidade do teste</td><td><code>mutmut</code> / cobertura no diff</td><td>Sim</td></tr>
+    <tr><td>Comportamento do RAG</td><td>suíte de evals (golden set)</td><td>Sim</td></tr>
   </table>
+  <div class="callout gotcha"><span class="ct">As quatro primeiras não medem o produto</span>Lint, teste unitário, segredo e template não dizem <strong>nada</strong> sobre a qualidade das respostas do chatbot. E teste gerado pelo mesmo agente, a partir da mesma spec, é correlacionado com a implementação: valida autoconsistência, não correção. Se o agente entendeu o requisito errado, errou nos dois artefatos e o CI fica verde. Daí as duas linhas novas na tabela.</div>
+  <h3>O job que faltava: evals do RAG</h3>
+  <p>Conjunto de perguntas de referência versionado no repo, rodando a cada PR. Sem ele, trocar o modelo, mudar o chunking ou recalibrar o guardrail quebra o comportamento sem nenhum sinal vermelho — exatamente o risco que a v4 do guardrail criaria em cima da v3 calibrada à mão.</p>
+  <pre><code><span class="cm"># evals/golden.yaml — versionado junto com o código</span>
+- id: REQ-04-sem-cobertura
+  pergunta: <span class="st">"qual a política de férias da concorrência?"</span>
+  espera: recusa            <span class="cm"># não deve inventar</span>
+- id: REQ-01-caminho-feliz
+  pergunta: <span class="st">"como solicito reembolso?"</span>
+  espera_trecho_de: <span class="st">"politica-reembolso.md"</span>   <span class="cm"># fundamentação</span>
+  contem: [<span class="st">"prazo"</span>, <span class="st">"formulário"</span>]
+- id: GUARD-falso-positivo
+  pergunta: <span class="st">"o reembolso cobre despesa médica da viagem?"</span>
+  espera: resposta          <span class="cm"># domínio legítimo, NÃO bloquear</span></code></pre>
+  <p>Três métricas bastam para começar: <strong>taxa de recuperação</strong> (o trecho certo apareceu no top-k), <strong>fundamentação</strong> (a resposta se apoia no que foi recuperado) e <strong>guardrail nos dois lados</strong> (falso positivo e falso negativo). O gate reprova em regressão, não em nota absoluta.</p>
   <div class="callout warn"><span class="ct">Gotcha real</span>O <code>gitleaks-action</code> falhou com <code>403 "Resource not accessible by integration"</code> — o <code>GITHUB_TOKEN</code> padrão não lê PRs sem permissão explícita. Solução: adicionar <code>permissions: {contents: read, pull-requests: read}</code> ao workflow.</div>
 </section>
 
 <section id="m5">
-  <h2><span class="mnum">MÓDULO 05</span>Bedrock: Knowledge Base + Foundation Model + Guardrails</h2>
+  <h2><span class="mnum">MÓDULO 06</span>Bedrock: Knowledge Base + Foundation Model + Guardrails</h2>
   <h3>Knowledge Base (RAG)</h3>
   <p>Criar uma KB via API pura é frágil (7 recursos: role, 3 políticas OpenSearch, índice vetorial, KB, data source). O <strong>índice vetorial</strong> exige uma chamada HTTP assinada (SigV4) ao endpoint <code>aoss</code>. <strong>Solução prática: "Quick create vector store" no console</strong>, que cria coleção + índice automaticamente. Depois, ingira os documentos (S3 → Sync) e o runtime só chama <code>Retrieve</code>:</p>
   <pre><code><span class="cm"># src/bedrock_kb.py</span>
@@ -199,6 +312,7 @@ resp = client.retrieve(
     retrievalConfiguration={<span class="st">"vectorSearchConfiguration"</span>: {<span class="st">"numberOfResults"</span>: <span class="nb">5</span>}},
 )</code></pre>
   <div class="callout tip"><span class="ct">Documentos autocontidos</span>Para RAG, prefira documentos-fonte cujas seções sejam <strong>autocontidas</strong> (repetem o contexto necessário). O chunking automático do Bedrock lida melhor com isso, e cada trecho recuperado faz sentido isolado.</div>
+  <div class="callout warn"><span class="ct">Citação não vem de graça neste caminho</span>Com <code>retrieve</code> + <code>converse</code> separados, você recebe os trechos com metadados e <strong>monta a atribuição você mesmo</strong>: nada garante que o modelo referencie o trecho certo. Se a promessa ao usuário é "resposta com fonte", carregue <code>location</code> e <code>score</code> de cada trecho até a resposta e valide isso nos evals. A alternativa pronta é <code>RetrieveAndGenerate</code>, que devolve citações estruturadas em troca de menos controle sobre o prompt.</div>
   <h3>Foundation Model — use a API Converse</h3>
   <p>Decisão de arquitetura chave: em vez de <code>InvokeModel</code> com o payload específico de cada modelo (Claude ≠ Nova ≠ DeepSeek), usamos a <strong>API Converse</strong> — formato unificado. Trocar de modelo vira mudar uma string.</p>
   <pre><code><span class="cm"># src/bedrock_fm.py — agnóstico de modelo</span>
@@ -211,11 +325,12 @@ resp = client.converse(
 )</code></pre>
   <div class="callout tip"><span class="ct">Por que Converse</span>Desacopla o serviço do fornecedor do modelo. O mesmo código serve Claude, DeepSeek, Mistral e Nova. Em produção, isso é <strong>portabilidade de modelo</strong> sem refatoração.</div>
   <h3>Guardrails</h3>
-  <p>Guardrail do Bedrock aplicado nas duas pontas: tópicos negados (manter o bot no domínio), filtros de conteúdo (HATE/SEXUAL/VIOLENCE) e PII. A calibração é a parte difícil (ver Módulo 08).</p>
+  <p>Guardrail do Bedrock aplicado nas duas pontas: tópicos negados (manter o bot no domínio), filtros de conteúdo (HATE/SEXUAL/VIOLENCE) e PII. A calibração é a parte difícil (ver módulo de armadilhas).</p>
+  <div class="callout warn"><span class="ct">Guardrail é filtro probabilístico, não controle de acesso</span>Ele reduz resposta fora de escopo; não substitui autorização nem fronteira de dado. Se um documento não pode ser visto por um perfil de usuário, isso se resolve com filtro de metadado na recuperação e permissão, nunca confiando que o classificador vai barrar.</div>
 </section>
 
 <section id="m6">
-  <h2><span class="mnum">MÓDULO 06</span>Segurança & as travas da conta gerenciada</h2>
+  <h2><span class="mnum">MÓDULO 07</span>Segurança & as travas da conta gerenciada</h2>
   <p>Contas AWS gerenciadas (ex.: a "nova experiência AWS") podem ter <strong>SCP/RCP gerenciadas e não editáveis</strong>. Isso impõe restrições que mudam decisões de arquitetura:</p>
   <div class="callout gotcha"><span class="ct">Restrição estrutural</span><strong>POST anônimo pode ser bloqueado.</strong> Endpoint público sem autenticação (API Gateway sem auth, ou Lambda Function URL <code>AuthType=NONE</code>) retorna <code>403</code> na borda — antes de chegar ao seu código. Se a RCP não é editável, não há como contornar por policy: mude a estratégia de auth.</div>
   <h3>Matriz de autenticação para front-end</h3>
@@ -240,7 +355,7 @@ GatewayResponse4xx:
 </section>
 
 <section id="m7">
-  <h2><span class="mnum">MÓDULO 07</span>Observabilidade sem custo de API</h2>
+  <h2><span class="mnum">MÓDULO 08</span>Observabilidade sem custo de API</h2>
   <p>Métricas via <strong>EMF (Embedded Metric Format)</strong>: a Lambda apenas imprime um JSON com bloco <code>_aws</code> no stdout, e o CloudWatch extrai as métricas automaticamente — sem chamada <code>PutMetricData</code> (sem custo de API, sem latência).</p>
   <pre><code><span class="cm"># src/observability.py — métrica EMF</span>
 emf = {
@@ -260,7 +375,7 @@ emf = {
 </section>
 
 <section id="m8">
-  <h2><span class="mnum">MÓDULO 08</span>Armadilhas reais (o que só aparece construindo)</h2>
+  <h2><span class="mnum">MÓDULO 09</span>Armadilhas reais (o que só aparece construindo)</h2>
   <p>Este é o módulo mais valioso para um arquiteto: os problemas que nenhum tutorial menciona.</p>
   <h4>1. Deprecações de API silenciosas</h4>
   <p>O endpoint <code>/rest/api/3/search</code> do Jira foi <strong>removido</strong> (HTTP 410 Gone) → migrar para <code>/rest/api/3/search/jql</code>. Actions em Node 20 deprecadas → <code>checkout@v5</code>, <code>setup-python@v6</code>. Lição: automações contra APIs externas precisam de manutenção contínua.</p>
@@ -280,7 +395,7 @@ emf = {
 </section>
 
 <section id="m9">
-  <h2><span class="mnum">MÓDULO 09</span>Decisões de arquitetura & trade-offs</h2>
+  <h2><span class="mnum">MÓDULO 10</span>Decisões de arquitetura & trade-offs</h2>
   <table>
     <tr><th>Decisão</th><th>Alternativa</th><th>Por quê</th></tr>
     <tr><td>API Converse</td><td>InvokeModel por modelo</td><td>Portabilidade de modelo sem refatorar; troca por env var</td></tr>
@@ -288,12 +403,15 @@ emf = {
     <tr><td>Métricas EMF</td><td>PutMetricData</td><td>Zero custo de API, zero latência extra</td></tr>
     <tr><td>Proxy backend p/ o segredo</td><td>API Key no front</td><td>Chave nunca no navegador; correto para produção</td></tr>
     <tr><td>IAM role por-recurso</td><td>role ampla</td><td>Permissão mínima: Retrieve só nesta KB, InvokeModel só neste modelo</td></tr>
+    <tr><td><code>modelId</code> com versão fixada</td><td>alias "latest"</td><td>Troca de modelo é mudança de comportamento; promover versão vira PR com evals</td></tr>
+    <tr><td>Golden set no repo</td><td>teste manual no console</td><td>Único jeito de detectar regressão de RAG e de guardrail antes do usuário</td></tr>
+    <tr><td>Deploy por pipeline com aprovação</td><td><code>sam deploy</code> da máquina</td><td>Human-in-the-loop é aprovar o deploy, não ser o mecanismo dele</td></tr>
   </table>
   <div class="callout tip"><span class="ct">Regra prática</span>CORS protege o navegador, mas não barra <code>curl</code> (o header <code>Origin</code> é forjável). Para segurança real do endpoint, combine autenticação (API Key/IAM/proxy) com CORS — nunca dependa só de CORS.</div>
 </section>
 
 <section id="m10">
-  <h2><span class="mnum">MÓDULO 10</span>Checklist do arquiteto</h2>
+  <h2><span class="mnum">MÓDULO 11</span>Checklist do arquiteto</h2>
   <h3>Antes de começar</h3>
   <ul>
     <li>Mapeie as <strong>restrições de conta</strong> (SCP/RCP) — elas mudam a arquitetura, não são detalhe</li>
@@ -302,10 +420,12 @@ emf = {
   </ul>
   <h3>No ciclo</h3>
   <ul>
-    <li>Requisitos EARS → cada cláusula vira teste</li>
-    <li>Gate humano em cada transição de fase (não pule)</li>
-    <li>1 task = 1 card = 1 branch = 1 PR = CI verde + aprovação</li>
-    <li>API agnóstica de modelo (Converse) desde o dia 1</li>
+    <li>Escolha o rigor <strong>antes</strong>: bug simples vai direto ao código; feature nova recebe o ciclo inteiro. Decidir quais estágios se aplicam é a primeira decisão humana</li>
+    <li>Gate humano obrigatório em cada transição <strong>que o trabalho exigir</strong> — workflow tamanho único é o problema, não a virtude</li>
+    <li>Inception em mob, com produto e QA na sala, não só devs</li>
+    <li>Requisitos EARS com ID → cada cláusula vira teste rastreável por identificador</li>
+    <li>Com um dev: 1 task = 1 card = 1 branch = 1 PR. Com vários: spec e contratos mesclados no main antes de qualquer branch</li>
+    <li>API agnóstica de modelo (Converse) desde o dia 1, com <code>modelId</code> versionado e registrado no PR</li>
   </ul>
   <h3>Segurança & operação</h3>
   <ul>
@@ -314,11 +434,13 @@ emf = {
     <li>CORS nos <em>erros</em> também (GatewayResponse), senão o browser mascara 403</li>
     <li>Guardrail: tópicos por categoria específica; teste falso positivo E negativo</li>
     <li>Observabilidade barata (EMF + logs JSON + X-Ray) desde o início</li>
-    <li>FinOps: vector store (OpenSearch Serverless) cobra 24/7 — planeje teardown</li>
+    <li>Guardrail é filtro, não autorização — dado restrito se resolve com filtro de metadado e permissão</li>
+    <li>Golden set de evals como gate de PR, desde o primeiro card</li>
+    <li>FinOps: vector store (OpenSearch Serverless) cobra 24/7 — planeje teardown. Em baixo volume ele supera a inferência; com tráfego real a conta se inverte</li>
   </ul>
   <div class="footer">
     <p>Estudo de caso: <strong>chatbot RAG</strong> — assistente conversacional que responde a partir de uma base de conhecimento própria. Stack: AWS Lambda + API Gateway + Bedrock (Knowledge Base + Foundation Model via Converse + Guardrails) + SAM, governado por Kiro (steering/specs/tasks) com CI/CD Jira + GitHub.</p>
-    <p style="margin-top:8px">Construído de ponta a ponta via ciclo AI-DLC com aprovação humana em cada fase. <a href="./index.html" style="color:var(--accent2)">← Voltar ao curso principal</a></p>
+    <p style="margin-top:8px">Construído de ponta a ponta com aprovação humana em cada fase, num projeto de um dev só: exercita a Construction em profundidade e não exercita Inception coletiva, cadência de bolt nem rigor adaptativo. <a href="./index.html" style="color:var(--accent2)">← Voltar ao curso principal</a></p>
   </div>
 </section>
 </main>
