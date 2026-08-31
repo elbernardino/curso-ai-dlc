@@ -258,9 +258,6 @@ footer li{margin-bottom:7px}
     <a class="tnode" href="#m10" style="--ph:#b5164f"><span class="num">10</span>Adoção em 90 dias</a>
     <div class="tgroup">Referência</div>
     <a class="tnode" href="#anexos" style="--ph:#8891b5"><span class="num">A</span>Glossário e fontes</a>
-    <div class="tgroup">Bônus</div>
-    <a class="tnode" href="./estudo-caso/" style="--ph:#0e8f74"><span class="num">★</span>Estudo de caso: do zero à API</a>
-    <a class="tnode" href="./ai-dlc-tecnico.html" style="--ph:#0e8f74"><span class="num">★</span>Deep dive técnico: chatbot RAG na AWS</a>
   </div>
   <p class="rail-foot">11 módulos · 6 diagramas<br>9 laboratórios<br>Nível: intermediário/avançado</p>
 </nav>
@@ -301,6 +298,38 @@ footer li{margin-bottom:7px}
 
   <h4>O que você constrói ao longo do curso</h4>
   <p>Um serviço de API pequeno mas real — um <em>ledger</em> de transações com autenticação — levado do intent inicial até três nuvens, com trilha de auditoria completa. Cada laboratório adiciona uma camada. Se você fizer todos, termina com um repositório que serve de template para o próximo projeto.</p>
+
+  <h4>Entendendo as peças: LLM, Claude Code, Kiro e Kiro Crew</h4>
+  <p>Antes de mergulhar nos módulos, vale ter claro o que é cada camada. A confusão entre elas é comum e atrapalha toda conversa sobre AI-DLC.</p>
+
+  <table class="tbl">
+    <tr><th style="width:20%">Camada</th><th>O que é</th><th style="width:26%">Analogia</th></tr>
+    <tr>
+      <td><strong>LLM</strong><br>(Large Language Model)</td>
+      <td>O modelo de linguagem em si. Claude, GPT, DeepSeek, Llama. Recebe texto, gera texto. Não lê arquivos, não roda código, não sabe o que é um repositório.</td>
+      <td>O cérebro. Inteligente, mas sem mãos nem olhos.</td>
+    </tr>
+    <tr>
+      <td><strong>Claude Code</strong><br>(agente de código)</td>
+      <td>O LLM (Claude) + acesso ao terminal, ao sistema de arquivos e ao Git. Lê seus arquivos, gera código, roda testes e faz commits. Trabalha dentro do projeto, mas segue instruções ad hoc: você diz o que fazer a cada turno.</td>
+      <td>O cérebro com mãos. Executa, mas sem processo definido.</td>
+    </tr>
+    <tr>
+      <td><strong>Kiro</strong><br>(IDE com AI-DLC)</td>
+      <td>Ambiente de desenvolvimento que implementa o ciclo AI-DLC nativamente. Além de tudo que o agente de código faz, adiciona <strong>specs</strong> (a especificação versionada do que vai ser construído), <strong>steering</strong> (regras que o agente lê em todo trabalho) e <strong>aprovação de fases</strong> (o humano revisa e aprova cada etapa antes de o agente prosseguir). É o que transforma "assistente de código" em "ciclo de engenharia com IA".</td>
+      <td>O cérebro com mãos <em>e um processo de trabalho</em>. Sabe propor o plano, esperar aprovação e seguir as regras.</td>
+    </tr>
+    <tr>
+      <td><strong>Kiro Crew</strong><br>(camada autônoma)</td>
+      <td>Camada de orquestração que roda sobre o Kiro. Adiciona memória persistente entre sessões, agendamentos automáticos, sub-agentes em paralelo e aprendizado contínuo (lembra do que você corrigiu). É o que permite agendar um "reporte semanal" ou pedir que o agente "fique de olho no PR e me avise".</td>
+      <td>O processo de trabalho <em>com agenda própria e memória de longo prazo</em>. Não precisa de você online para continuar operando.</td>
+    </tr>
+  </table>
+
+  <div class="note">
+    <span class="lbl">Por que isso importa para este curso</span>
+    <p>A maioria das demonstrações de "IA gerando código" usa só a camada 2 (agente de código). Este curso opera na camada 3 (Kiro com specs, steering e aprovação de fases). Os módulos de Fundamentos explicam o método, os de Ferramental mostram como ele roda no Kiro, e os de Entrega conectam isso a Jira, Git e deploy real.</p>
+  </div>
 
   <div class="note">
     <span class="lbl">Convenção visual</span>
